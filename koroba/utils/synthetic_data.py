@@ -109,9 +109,9 @@ class SyntheticData:
             )
             boxes_set = np.concatenate(augmented_boxes, axis=1)
             labels = np.where(
-                condition=np.random.random(n_boxes) < class_probability,
-                x=np.random.choice(np.arange(n_classes), n_boxes),
-                y=true['labels'],
+                np.random.random(n_boxes) < class_probability,
+                np.random.choice(np.arange(n_classes), n_boxes),
+                true['labels'],
             )
             scores = np.ones(n_boxes)
             drop_mask = np.random.random(n_boxes) < drop_probability

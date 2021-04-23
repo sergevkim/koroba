@@ -3,8 +3,8 @@ import torch
 import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
+import koroba.utils.iou as iou
 from koroba.utils import SyntheticData as SynData
-from rotated_iou import calculate_3d_giou
 
 
 def get_device():
@@ -39,7 +39,7 @@ def update_box_dataset_with_cameras(predicted):
             continue
         mask = check_boxes_in_camera(
             boxes=predicted['boxes'][i],
-            cameras=predicted['cameras'][i],
+            camera=predicted['cameras'][i],
         )
         for key in ['boxes', 'labels', 'scores']:
             predicted[key][i] = predicted[key][i][mask]
@@ -67,7 +67,7 @@ def match_boxes(
     repeated_p_boxes = p_boxes.repeat(n_boxes, 1)
     repeated_p_labels = p_labels.repeat(n_boxes)
 
-    pairwise_giou = calculate_3d_giou(
+    pairwise_giou = iou.calculate_3d_giou(
         box3d1=repeated_boxes[None, ...],
         box3d2=repeated_p_boxes[None, ...],
     )[0]
