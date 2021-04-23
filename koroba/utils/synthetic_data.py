@@ -19,7 +19,7 @@ def augment(
 
 def create_rotation_matrix(forward_vector):
     v1 = forward_vector / np.linalg.norm(forward_vector)
-    v2 = np.cross([.0, .0, 1.], v1)
+    v2 = np.cross([0.0, 0.0, 1.0], v1)
     v2 = v2 / np.linalg.norm(v2)
     v3 = np.cross(v1, v2)
 
@@ -35,7 +35,7 @@ class SyntheticData:
             size_threshold,
             angle_threshold,
         ):
-        layout = np.array([.5, .5, .5, 1., 1., 1., .0])
+        layout = np.array([0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 0.0])
         layouts = np.stack([layout] * n)
         augmented_layouts = (
             augment(layouts[:, :3], a_threshold=center_threshold),
@@ -53,8 +53,8 @@ class SyntheticData:
         ):
         cameras = []
         for _ in range(n):
-            point = np.random.uniform(.0, 1., 3)
-            forward_vector = np.array([.5, .5, .5]) - point
+            point = np.random.uniform(0.0, 1.0, 3)
+            forward_vector = np.array([0.5, 0.5, 0.5]) - point
             forward_vector = Rotation.from_rotvec(
                 augment(np.zeros(3), a_threshold=angle_threshold),
             ).apply(forward_vector)
@@ -65,9 +65,9 @@ class SyntheticData:
 
             extrinsic = np.linalg.inv(camera_pose)
             intrinsic = np.array([
-                [.5, .0, .5, .0],
-                [.0, .5, .5, .0],
-                [.0, .0, 1., .0],
+                [0.5, 0.0, 0.5, 0.0],
+                [0.0, 0.5, 0.5, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
             ])
             camera = intrinsic @ extrinsic
             cameras.append(camera)
@@ -107,15 +107,15 @@ class SyntheticData:
                 augment(true['boxes'][:, 3: -1], m_threshold=size_threshold),
                 augment(true['boxes'][:, -1:], a_threshold=angle_threshold),
             )
-            boxes = np.concatenate(augmented_boxes, axis=1)
+            boxes_set = np.concatenate(augmented_boxes, axis=1)
             labels = np.where(
-                np.random.random(n_boxes) < class_probability,
-                np.random.choice(np.arange(n_classes), n_boxes),
-                true['labels']
+                condition=np.random.random(n_boxes) < class_probability,
+                x=np.random.choice(np.arange(n_classes), n_boxes),
+                y=true['labels'],
             )
             scores = np.ones(n_boxes)
             drop_mask = np.random.random(n_boxes) < drop_probability
-            predicted['boxes'].append(boxes[~drop_mask])
+            predicted['boxes'].append(boxes_set[~drop_mask])
             predicted['labels'].append(labels[~drop_mask])
             predicted['scores'].append(scores[~drop_mask])
 
