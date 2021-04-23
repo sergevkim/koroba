@@ -2,7 +2,7 @@
 
 import torch
 import numpy as np
-from ops.cuda_ext import sort_v
+from .ops.cuda_ext import sort_v
 
 EPSILON = 1e-8
 
