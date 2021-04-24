@@ -157,9 +157,9 @@ def optimize_boxes(
 
 
 def run_box_experiment(
-        n: int = 10
-        n_boxes: int = 4
-        n_classes: int = 10
+        n: int = 10,
+        n_boxes: int = 4,
+        n_classes: int = 10,
     ):
     true, predicted = SynData.generate_box_dataset(
         n=n,
