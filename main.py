@@ -4,45 +4,16 @@ import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
 import koroba.utils.iou as iou
-from koroba.utils import SyntheticData as SynData
+from koroba.utils import (
+    Camera,
+    Randomizer,
+    SyntheticData as SynData,
+)
 
 
 def get_device():
     assert torch.cuda.is_available()
     return torch.device('cuda:0')
-
-
-def check_boxes_in_camera(boxes, camera):
-    center_3d = boxes[:, :3].T
-    to_concat = (
-        center_3d,
-        np.ones((1, len(boxes))),
-    )
-    center_3d = np.concatenate(to_concat, axis=0)
-    x, y, z = camera @ center_3d
-    x /= z
-    y /= z
-    check = np.logical_and.reduce((
-        z >= .0,
-        x >= .0,
-        x <= 1.,
-        y >= .0,
-        y <= 1.
-    ))
-
-    return check
-
-
-def update_box_dataset_with_cameras(predicted):
-    for i in range(len(predicted['boxes'])):
-        if not len(predicted['boxes'][i]):
-            continue
-        mask = check_boxes_in_camera(
-            boxes=predicted['boxes'][i],
-            camera=predicted['cameras'][i],
-        )
-        for key in ['boxes', 'labels', 'scores']:
-            predicted[key][i] = predicted[key][i][mask]
 
 
 def match_boxes(
@@ -53,7 +24,7 @@ def match_boxes(
     ):
     n_p_boxes = p_boxes.shape[0]
     if not n_p_boxes:
-        return torch.tensor(.0, dtype=torch.float, device=boxes.device), []
+        return torch.tensor(0.0, dtype=torch.float, device=boxes.device), []
 
     n_boxes = boxes.shape[0]
     to_concat = [
@@ -145,7 +116,7 @@ def optimize_boxes(
                 boxes=boxes,
                 scores=scores,
             )
-            visible_index = check_boxes_in_camera(
+            visible_index = Camera.check_boxes_in_camera_fov(
                 boxes=boxes.detach().cpu().numpy(),
                 camera=predicted['cameras'][j],
             )
@@ -185,8 +156,6 @@ def optimize_boxes(
     }
 
 
-
-
 def run_box_experiment():
     n = 10
     n_boxes = 4
@@ -209,7 +178,7 @@ def run_box_experiment():
         angle_threshold=.3,
     )
     predicted['cameras'] = cameras
-    update_box_dataset_with_cameras(predicted)
+    SynData.update_box_dataset_with_cameras(predicted)
     print('predicted boxes:')
 
     for i in range(len(predicted['boxes'])):
@@ -233,5 +202,6 @@ def run_box_experiment():
 
 
 if __name__ == '__main__':
+    Randomizer.set_seed()
     np.set_printoptions(precision=5, suppress=True, sign=' ')
     run_box_experiment()

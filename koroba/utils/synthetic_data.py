@@ -3,6 +3,8 @@ from collections import defaultdict
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from koroba.utils import Camera
+
 
 def augment(
         x,
@@ -121,3 +123,14 @@ class SyntheticData:
 
         return true, predicted
 
+    @staticmethod
+    def update_box_dataset_with_cameras(predicted):
+        for i in range(len(predicted['boxes'])):
+            if not len(predicted['boxes'][i]):
+                continue
+            mask = Camera.check_boxes_in_camera_fov(
+                boxes=predicted['boxes'][i],
+                camera=predicted['cameras'][i],
+            )
+            for key in ['boxes', 'labels', 'scores']:
+                predicted[key][i] = predicted[key][i][mask]
