@@ -11,7 +11,7 @@ class Camera:
         center_3d = boxes[:, :3].T
         to_concat = (
             center_3d,
-            np.ones((1, len(boxes))),
+            np.ones(shape=(1, len(boxes))),
         )
         center_3d = np.concatenate(to_concat, axis=0)
         x, y, z = camera @ center_3d
@@ -26,3 +26,15 @@ class Camera:
         ))
 
         return check
+
+    @staticmethod
+    def project_boxes_onto_camera_plane(
+            boxes_set: Tensor,
+            camera: np.ndarray,
+        ) -> Tensor:
+        center_3d = boxes[:, :3].T
+        to_concat = (
+            center_3d,
+            np.ones(shape=(1, len(boxes))),
+        )
+        center_3d = np.concatenate(to_concat, axis=0)
