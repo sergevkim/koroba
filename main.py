@@ -156,10 +156,11 @@ def optimize_boxes(
     }
 
 
-def run_box_experiment():
-    n = 10
-    n_boxes = 4
-    n_classes = 10
+def run_box_experiment(
+        n: int = 10
+        n_boxes: int = 4
+        n_classes: int = 10
+    ):
     true, predicted = SynData.generate_box_dataset(
         n=n,
         n_boxes=n_boxes,
@@ -184,7 +185,12 @@ def run_box_experiment():
     for i in range(len(predicted['boxes'])):
         print('box set:')
         for j in range(len(predicted['boxes'][i])):
-            print(predicted['boxes'][i][j], '|', predicted['labels'][i][j], '|', predicted['scores'][i][j])
+            string = (
+                f"{predicted['boxes'][i][j]} |"
+                f"{predicted['labels'][i][j]} |"
+                f"{predicted['scores'][i][j]}"
+            )
+            print(string)
 
     # TODO: + 10 here is for complication of current experiments
     optimized = optimize_boxes(
@@ -198,7 +204,12 @@ def run_box_experiment():
         print(true['boxes'][i], '|', true['labels'][i])
     print('boxes:')
     for i in range(len(optimized['boxes'])):
-        print(optimized['boxes'][i], '|', optimized['labels'][i], '|', optimized['scores'][i])
+        string = (
+            f"{optimized['boxes'][i][j]} |"
+            f"{optimized['labels'][i][j]} |"
+            f"{optimized['scores'][i][j]}"
+        )
+        print(string)
 
 
 if __name__ == '__main__':

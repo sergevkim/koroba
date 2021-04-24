@@ -1,6 +1,13 @@
+import numpy as np
+from torch import Tensor
+
+
 class Camera:
     @staticmethod
-    def check_boxes_in_camera_fov(boxes, camera):
+    def check_boxes_in_camera_fov(
+            boxes: Tensor,
+            camera: np.ndarray,
+        ):
         center_3d = boxes[:, :3].T
         to_concat = (
             center_3d,
