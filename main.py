@@ -182,7 +182,10 @@ def run_box_experiment(
         angle_threshold=.3,
     )
     predicted['cameras'] = cameras
-    SynData.update_box_dataset_with_cameras(predicted)
+    SynData.update_box_dataset_with_cameras(
+        seen=predicted,
+        proj=False,
+    )
     print('predicted boxes:')
 
     for i in range(len(predicted['boxes'])):

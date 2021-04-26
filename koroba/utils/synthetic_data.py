@@ -124,7 +124,10 @@ class SyntheticData:
         return true, predicted
 
     @staticmethod
-    def update_box_dataset_with_cameras(seen):
+    def update_box_dataset_with_cameras(
+            seen,
+            proj: bool = False,
+        ):
         for i in range(len(seen['boxes'])):
             if not len(seen['boxes'][i]):
                 continue
@@ -135,13 +138,14 @@ class SyntheticData:
             for key in ['boxes', 'labels', 'scores']:
                 seen[key][i] = seen[key][i][mask]
 
-        seen['projections'] = list()
+        if proj:
+            seen['projections'] = list()
 
-        for i, camera in enumerate(seen['cameras']):
-            boxes_set = seen['boxes'][i]
-            proj = Camera.project_boxes_on_camera_plane(
-                camera=camera,
-                boxes_set=boxes_set,
-            )
-            seen['projections'].append(proj)
+            for i, camera in enumerate(seen['cameras']):
+                boxes_set = seen['boxes'][i]
+                proj = Camera.project_boxes_onto_camera_plane(
+                    camera=camera,
+                    boxes_set=boxes_set,
+                )
+                seen['projections'].append(proj)
 
