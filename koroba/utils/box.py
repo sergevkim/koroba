@@ -1,5 +1,10 @@
+import copy
+
 import numpy as np
+import open3d as o3d
 from scipy.spatial.transform import Rotation
+
+from koroba.utils.constants import LINES
 
 
 class Box:
@@ -49,6 +54,44 @@ class Box:
     @staticmethod
     def eight2seven(box):
         pass
+
+    @staticmethod
+    def estimate_horizontal_bounding_box(points: np.ndarray):
+        n = len(points)
+        points_lower = copy.deepcopy(points)
+        points_upper = copy.deepcopy(points)
+
+        z_max = min(points_lower[:, 2])
+        z_min = max(points_upper[:, 2])
+        points_lower[:, 2] = z_min
+        points_upper[:, 2] = z_max
+
+        points = np.concatenate((points_lower, points_upper))
+        flat_points = o3d.utility.Vector3dVector(points)
+
+        horizontal_bounding_box = \
+            o3d.geometry.OrientedBoundingBox.create_from_points(flat_points)
+
+        return horizontal_bounding_box
+
+    @staticmethod
+    def get_geometry(
+            bbox: o3d.geometry.OrientedBoundingBox,
+            spheres_flag: bool = False,
+        ):
+        bbox_vertices = np.asarray(bbox.get_box_points())
+        line_set = o3d.geometry.LineSet(
+            points=o3d.utility.Vector3dVector(bbox_vertices),
+            lines=o3d.utility.Vector2iVector(LINES),
+        )
+
+        if spheres_flag:
+            bbox_spheres = add_points([], bbox_vertices, color='r', size='big')
+            bbox_geometry = [line_set] + bbox_spheres
+        else:
+            bbox_geometry = [line_set]
+
+        return bbox_geometry
 
 
 if __name__ == '__main__':

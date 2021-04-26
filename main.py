@@ -8,6 +8,7 @@ from koroba.utils import (
     Camera,
     Randomizer,
     SyntheticData as SynData,
+    Visualizer,
 )
 
 
@@ -22,7 +23,7 @@ def match_boxes(
         boxes,
         scores,
     ):
-    n_p_boxes = p_boxes.shape[0]
+    n_p_boxes = len(p_boxes)
     if not n_p_boxes:
         return torch.tensor(0.0, dtype=torch.float, device=boxes.device), []
 

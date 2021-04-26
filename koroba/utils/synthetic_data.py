@@ -91,9 +91,9 @@ class SyntheticData:
             angle_threshold,
         ):
         to_concat = (
-            np.random.normal(.5, center_std, (n_boxes, 3)),
+            np.random.normal(0.5, center_std, (n_boxes, 3)),
             np.abs(np.random.normal(size_mean, size_std, (n_boxes, 3))),
-            np.random.uniform(.0, 2 * np.pi, (n_boxes, 1))
+            np.random.uniform(0.0, 2 * np.pi, (n_boxes, 1))
         )
         boxes = np.concatenate(to_concat, axis=1)
         true = {
