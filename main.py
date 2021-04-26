@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -60,8 +62,8 @@ def match_boxes(
 
 def optimize_boxes(
         predicted,
-        n_boxes,
-        n_classes,
+        n_boxes: int,
+        n_classes: int,
         no_object_weight: float = 0.4,
     ):
     device = get_device()
@@ -212,8 +214,23 @@ def run_box_experiment(
         )
         print(string)
 
+    return optimized
+
+
+def main(args):
+    Randomizer.set_seed()
+    np.set_printoptions(
+        precision=5,
+        suppress=True,
+        sign=' ',
+    )
+    optimized = run_box_experiment()
+    boxes = optimized['boxes']
+    for i, box in enumerate(boxes):
+        print(i, box.shape)
+
 
 if __name__ == '__main__':
-    Randomizer.set_seed()
-    np.set_printoptions(precision=5, suppress=True, sign=' ')
-    run_box_experiment()
+    parser = ArgumentParser()
+    args = parser.parse_args()
+    main(args)
