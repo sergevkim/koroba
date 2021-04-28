@@ -64,6 +64,7 @@ def optimize_boxes(
         predicted,
         n_boxes: int,
         n_classes: int,
+        n_steps: int = 200,
         no_object_weight: float = 0.4,
     ):
     device = get_device()
@@ -108,7 +109,7 @@ def optimize_boxes(
 
     optimizer = torch.optim.Adam([boxes, scores], lr=0.01)
 
-    for i in range(500):
+    for i in range(n_steps):
         i_loss = torch.tensor(.0, dtype=torch.float, device=device)
 
         for j in range(len(predicted['boxes'])):
@@ -211,9 +212,9 @@ def run_box_experiment(
     print('boxes:')
     for i in range(len(optimized['boxes'])):
         string = (
-            f"{optimized['boxes'][i][j]} |"
-            f"{optimized['labels'][i][j]} |"
-            f"{optimized['scores'][i][j]}"
+            f"{optimized['boxes'][i]} |"
+            f"{optimized['labels'][i]} |"
+            f"{optimized['scores'][i]}"
         )
         print(string)
 
