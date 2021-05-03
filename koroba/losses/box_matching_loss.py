@@ -1,6 +1,7 @@
 import torch
+import torch.nn.functional as F
 
-from koroba.losses import calculate_3d_giou
+from .iou import calculate_3d_giou
 
 
 class BoxMatchingLoss:

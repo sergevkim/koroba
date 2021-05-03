@@ -1,8 +1,10 @@
 import copy
+from typing import Union
 
 import numpy as np
 import open3d as o3d
 from scipy.spatial.transform import Rotation
+from torch import Tensor
 
 from koroba.utils.constants import LINES
 
@@ -16,7 +18,7 @@ class Box:
     to each other
     '''
     @staticmethod
-    def seven2two(box):
+    def seven2two(box: Union[np.ndarray, Tensor]):
         # TODO check coordinates
         # TODO vectorize
         center = box[:3]
@@ -37,7 +39,7 @@ class Box:
         return np.array(two_points)
 
     @classmethod
-    def seven2eight(cls, box):
+    def seven2eight(cls, box: Union[np.ndarray, Tensor]):
         two_points = cls.seven2two(box)
         eight_points = list()
 
@@ -52,7 +54,7 @@ class Box:
         return np.array(eight_points)
 
     @staticmethod
-    def eight2seven(box):
+    def eight2seven(box: Union[np.ndarray, Tensor]):
         pass
 
     @staticmethod
@@ -92,6 +94,10 @@ class Box:
             bbox_geometry = [line_set]
 
         return bbox_geometry
+
+    @staticmethod
+    def save_bounding_box():
+        pass
 
 
 if __name__ == '__main__':
