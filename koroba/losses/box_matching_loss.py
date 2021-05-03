@@ -1,3 +1,8 @@
+import torch
+
+from koroba.losses import calculate_3d_giou
+
+
 class BoxMatchingLoss:
     @staticmethod
     def calculate_3d(

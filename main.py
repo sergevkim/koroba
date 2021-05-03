@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
-from koroba.losses import BoxMatchingLoss, calculate_3d_giou
+from koroba.losses import BoxMatchingLoss
 from koroba.utils import (
     Camera,
     Randomizer,
