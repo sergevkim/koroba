@@ -2,8 +2,29 @@ import numpy as np
 import open3d as o3d
 import plotly.graph_objects as go
 
+from koroba.utils.constants import LINES
+
 
 class Visualizer:
+    @staticmethod
+    def get_geometry(
+            bbox: o3d.geometry.OrientedBoundingBox,
+            spheres_flag: bool = False,
+        ):
+        bbox_vertices = np.asarray(bbox.get_box_points())
+        line_set = o3d.geometry.LineSet(
+            points=o3d.utility.Vector3dVector(bbox_vertices),
+            lines=o3d.utility.Vector2iVector(LINES),
+        )
+
+        if spheres_flag:
+            bbox_spheres = add_points([], bbox_vertices, color='r', size='big')
+            bbox_geometry = [line_set] + bbox_spheres
+        else:
+            bbox_geometry = [line_set]
+
+        return bbox_geometry
+
     @staticmethod
     def draw_geometries(geometries):
         graph_objects = list()

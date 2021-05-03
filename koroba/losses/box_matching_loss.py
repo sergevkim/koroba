@@ -2,7 +2,10 @@ import torch
 import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
-from .iou import calculate_2d_giou, calculate_3d_giou
+try:
+    from .iou import calculate_2d_giou, calculate_3d_giou
+except:
+    print('install cuda ops')
 
 
 class BoxMatchingLoss:

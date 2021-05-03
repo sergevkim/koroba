@@ -6,8 +6,6 @@ import open3d as o3d
 from scipy.spatial.transform import Rotation
 from torch import Tensor
 
-from koroba.utils.constants import LINES
-
 
 class Box:
     '''
@@ -15,7 +13,10 @@ class Box:
         7 coords: 3 for center, 3 for lengths size, 1 for angle
         8 coords: 8 points
         2 coords: lower left front point and the opposite to it
-    to each other
+    to each other.
+
+    Also can estimate horizontal bounding box (z axis oriented only)
+    on the all point cloud.
     '''
     @staticmethod
     def seven2two(box: Union[np.ndarray, Tensor]):
@@ -75,29 +76,6 @@ class Box:
             o3d.geometry.OrientedBoundingBox.create_from_points(flat_points)
 
         return horizontal_bounding_box
-
-    @staticmethod
-    def get_geometry(
-            bbox: o3d.geometry.OrientedBoundingBox,
-            spheres_flag: bool = False,
-        ):
-        bbox_vertices = np.asarray(bbox.get_box_points())
-        line_set = o3d.geometry.LineSet(
-            points=o3d.utility.Vector3dVector(bbox_vertices),
-            lines=o3d.utility.Vector2iVector(LINES),
-        )
-
-        if spheres_flag:
-            bbox_spheres = add_points([], bbox_vertices, color='r', size='big')
-            bbox_geometry = [line_set] + bbox_spheres
-        else:
-            bbox_geometry = [line_set]
-
-        return bbox_geometry
-
-    @staticmethod
-    def save_bounding_box(box: Union[np.ndarray, Tensor]):
-        pass
 
 
 if __name__ == '__main__':
