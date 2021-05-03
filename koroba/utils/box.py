@@ -96,7 +96,7 @@ class Box:
         return bbox_geometry
 
     @staticmethod
-    def save_bounding_box():
+    def save_bounding_box(box: Union[np.ndarray, Tensor]):
         pass
 
 

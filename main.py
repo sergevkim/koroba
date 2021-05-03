@@ -4,7 +4,6 @@ import numpy as np
 import open3d as o3d
 import torch
 import torch.nn.functional as F
-from scipy.optimize import linear_sum_assignment
 
 from koroba.losses import BoxMatchingLoss
 from koroba.utils import (
