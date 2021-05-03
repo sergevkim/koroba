@@ -29,22 +29,39 @@ class Camera:
 
         return check
 
-    #TODO
     @staticmethod
+    def project_single_box_onto_camera_plane(
+            box: Tensor,
+            camera: np.ndarray,
+        ) -> Tensor:
+        assert box.shape == (7, 3)
+        vertices = Box.seven2eight(box).T
+        assert vertices.shape == (8, 3)
+        to_concat = (
+            vertices,
+            np.ones(shape=(1, len(vertices_3d))),
+        )
+        vertices = np.concatenate(to_concat, axis=0)
+        vertices_projection = camera @ vertices
+
+        return vertices_projection
+
+    @classmethod
     def project_boxes_onto_camera_plane(
-            boxes_set: Tensor,
+            cls,
+            boxes: Tensor,
             camera: np.ndarray,
         ) -> Tensor:
         boxes_vertices_list = list()
 
-        for box in boxes_set:
-            box_vertices = Box.seven2eight(box)
-            boxes_vertices_list.append(box_vertices)
-
-        for v in boxes_vertices:
-            v = v.T
-            to_concat = (
-                v,
-                np.ones(shape=(1, len(boxes))),
+        for box in boxes:
+            vertices_projection = cls.project_single_box_onto_camera_plane(
+                box=box,
+                camera=camera,
             )
-            center_3d = np.concatenate(to_concat, axis=0)
+            point_min = vertices_projection.min(axis=0)
+            point_max = vertices_projection.max(axis=0)
+            box_projection = np.array((point_min, point_max))
+            boxes_projections.append(box_projection)
+
+        return boxes_projections
