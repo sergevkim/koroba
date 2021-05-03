@@ -391,18 +391,22 @@ def enclosing_box(corners1: torch.Tensor, corners2: torch.Tensor, enclosing_type
     return smallest_bounding_box(torch.cat([corners1, corners2], dim=-2))
 
 
-def calculate_3d_giou(box3d1:torch.Tensor, box3d2: torch.Tensor, enclosing_type: str = "smallest"):
-    """calculated 3d GIoU loss. assume the 3d bounding boxes are only rotated around z axis
-    Args:
-        box3d1 (torch.Tensor): (B, N, 3+3+1),  (x,y,z,w,h,l,alpha)
-        box3d2 (torch.Tensor): (B, N, 3+3+1),  (x,y,z,w,h,l,alpha)
-        enclosing_type (str, optional): type of enclosing box. Defaults to "smallest".
-    Returns:
-        (torch.Tensor): (B, N) 3d GIoU loss
-        (torch.Tensor): (B, N) 3d IoU
-    """
-    iou3d, corners1, corners2, z_range, u3d = calculate_3d_iou(box3d1, box3d2, verbose=True)
-    w, h = enclosing_box(corners1, corners2, enclosing_type)
-    v_c = z_range * w * h
-    giou_loss = 1. - iou3d + (v_c - u3d)/v_c
-    return giou_loss, iou3d
+class IOULoss:
+    @staticmethod
+    def calculate_3d_giou(box3d1:torch.Tensor, box3d2: torch.Tensor, enclosing_type: str = "smallest"):
+        """calculated 3d GIoU loss. assume the 3d bounding boxes are only rotated around z axis
+        Args:
+            box3d1 (torch.Tensor): (B, N, 3+3+1),  (x,y,z,w,h,l,alpha)
+            box3d2 (torch.Tensor): (B, N, 3+3+1),  (x,y,z,w,h,l,alpha)
+            enclosing_type (str, optional): type of enclosing box. Defaults to "smallest".
+        Returns:
+            (torch.Tensor): (B, N) 3d GIoU loss
+            (torch.Tensor): (B, N) 3d IoU
+        """
+        iou3d, corners1, corners2, z_range, u3d = calculate_3d_iou(box3d1, box3d2, verbose=True)
+        w, h = enclosing_box(corners1, corners2, enclosing_type)
+        v_c = z_range * w * h
+        giou_loss = 1. - iou3d + (v_c - u3d)/v_c
+
+        return giou_loss, iou3d
+
