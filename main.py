@@ -5,6 +5,7 @@ import open3d as o3d
 import torch
 import torch.nn.functional as F
 
+import koroba.utils.io as io
 from koroba.losses import BoxMatchingLoss
 from koroba.utils import (
     Camera,
@@ -177,7 +178,7 @@ def run_box_experiment(
         )
         print(string)
 
-    return optimized
+    return true, optimized
 
 
 def main(args):
@@ -187,11 +188,21 @@ def main(args):
         suppress=True,
         sign=' ',
     )
-    optimized = run_box_experiment()
-    boxes = optimized['boxes']
-    for i, box in enumerate(boxes):
-        print(i, box.shape)
+    true, optimized = run_box_experiment()
+    true_boxes = true['boxes']
+    optimized_boxes = optimized['boxes']
 
+    for i, box in enumerate(true_boxes):
+        io.write_bounding_box(
+            filename=f'output/true_box_{i}.pcd',
+            box=box,
+        )
+
+    for i, box in enumerate(optimized_boxes):
+        io.write_bounding_box(
+            filename=f'output/optimized_box_{i}.pcd',
+            box=box,
+        )
 
 if __name__ == '__main__':
     parser = ArgumentParser()
