@@ -26,6 +26,7 @@ def optimize_boxes(
         n_classes: int,
         n_steps: int = 200,
         no_object_weight: float = 0.4,
+        mode: str = '3d',
     ):
     device = get_device()
 
@@ -45,8 +46,8 @@ def optimize_boxes(
     initial_boxes[:, 3: -1] = np.log(initial_boxes[:, 3: -1])
     initial_boxes = \
         torch.tensor(initial_boxes, dtype=torch.float, device=device)
-    boxes = initial_boxes.clone().detach()
-    boxes.requires_grad = True
+    optimized_boxes = initial_boxes.clone().detach()
+    optimized_boxes.requires_grad = True
 
     initial_scores = np.random.random((n_boxes, n_classes + 1))
     initial_scores[:, -1] = .0
@@ -67,21 +68,29 @@ def optimize_boxes(
             device=device,
         )
 
-    optimizer = torch.optim.Adam([boxes, scores], lr=0.01)
+    optimizer = torch.optim.Adam([optimized_boxes, scores], lr=0.01)
 
     for i in range(n_steps):
         i_loss = torch.tensor(.0, dtype=torch.float, device=device)
 
         for j in range(len(predicted['boxes'])):
             optimizer.zero_grad()
-            match_boxes_loss, rows = BoxMatchingLoss.calculate_3d(
-                p_boxes=predicted['boxes'][j],
-                p_labels=predicted['labels'][j],
-                boxes=boxes,
-                scores=scores,
-            )
+            if mode == '3d':
+                match_boxes_loss, rows = BoxMatchingLoss.calculate_3d(
+                    p_boxes=predicted['boxes'][j],
+                    p_labels=predicted['labels'][j],
+                    boxes=optimized_boxes,
+                    scores=scores,
+                )
+            else:
+                match_boxes_loss, rows = BoxMatchingLoss.calculate_2d(
+                    p_boxes=predicted['boxes'][j],
+                    p_labels=predicted['labels'][j],
+                    boxes=optimized_boxes,
+                    scores=scores,
+                )
             visible_index = Camera.check_boxes_in_camera_fov(
-                boxes=boxes.detach().cpu().numpy(),
+                boxes=optimized_boxes.detach().cpu().numpy(),
                 camera=predicted['cameras'][j],
             )
             no_object_index = np.ones(n_boxes, dtype=np.bool)
@@ -110,14 +119,16 @@ def optimize_boxes(
         optimizer.step()
         print(f'i: {i};  loss: {i_loss.detach().cpu().numpy()}')
 
-    boxes = boxes.detach().cpu().numpy()
-    boxes[:, 3: -1] = np.exp(boxes[:, 3: -1])
+    optimized_boxes = optimized_boxes.detach().cpu().numpy()
+    optimized_boxes[:, 3: -1] = np.exp(optimized_boxes[:, 3: -1])
     scores = torch.softmax(scores, dim=1).detach().cpu().numpy()
-    return {
-        'boxes': boxes,
+    optimized = {
+        'boxes': optimized_boxes,
         'labels': np.argmax(scores, axis=1),
         'scores': np.max(scores, axis=1)
     }
+
+    return optimized
 
 
 def run_box_experiment(
@@ -165,6 +176,7 @@ def run_box_experiment(
         n_boxes=n_boxes + 10,
         n_classes=n_classes,
         no_object_weight=0.4,
+        mode='3d',
     )
     print('true boxes:')
     for i in range(len(true['boxes'])):

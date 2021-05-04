@@ -50,6 +50,7 @@ class BoxMatchingLoss:
 
         return cost[rows, columns], rows
 
+    @staticmethod
     def calculate_2d(
             p_boxes,
             p_labels,
@@ -57,13 +58,13 @@ class BoxMatchingLoss:
             scores,
         ):
         n_p_boxes = len(p_boxes)
+        n_boxes = len(boxes)
         if not n_p_boxes:
             return torch.tensor(0.0, dtype=torch.float, device=boxes.device), []
 
-        n_boxes = boxes.shape[0]
         to_concat = [
             boxes[:, :3],
-            torch.exp(boxes[:, 3: -1]),
+            torch.exp(boxes[:, 3:-1]),
             boxes[:, -1:],
         ]
         exp_boxes = torch.cat(to_concat, dim=1)
