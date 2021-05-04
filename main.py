@@ -34,8 +34,8 @@ def optimize_boxes(
         np.concatenate(tuple(filter(lambda x: len(x), predicted['boxes'])))
     center_mean = np.mean(initial_boxes[:, :3], axis=0)
     center_std = np.std(initial_boxes[:, :3], axis=0)
-    size_mean = np.mean(initial_boxes[:, 3: -1], axis=0)
-    size_std = np.std(initial_boxes[:, 3: -1], axis=0)
+    size_mean = np.mean(initial_boxes[:, 3:-1], axis=0)
+    size_std = np.std(initial_boxes[:, 3:-1], axis=0)
 
     to_concat = (
         np.random.normal(center_mean, center_std, (n_boxes, 3)),

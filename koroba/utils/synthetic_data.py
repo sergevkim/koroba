@@ -54,6 +54,7 @@ class SyntheticData:
             angle_threshold,
         ):
         cameras = []
+
         for _ in range(n):
             point = np.random.uniform(0.0, 1.0, 3)
             forward_vector = np.array([0.5, 0.5, 0.5]) - point
@@ -74,7 +75,7 @@ class SyntheticData:
             camera = intrinsic @ extrinsic
             cameras.append(camera)
 
-        return cameras
+        return np.array(cameras)
 
     @staticmethod
     def generate_box_dataset(
@@ -101,7 +102,7 @@ class SyntheticData:
             'labels': np.random.choice(np.arange(n_classes), n_boxes)
         }
 
-        predicted = defaultdict(list)
+        seen = defaultdict(list)
 
         for _ in range(n):
             augmented_boxes = (
@@ -117,9 +118,11 @@ class SyntheticData:
             )
             scores = np.ones(n_boxes)
             drop_mask = np.random.random(n_boxes) < drop_probability
-            predicted['boxes'].append(boxes_set[~drop_mask])
-            predicted['labels'].append(labels[~drop_mask])
-            predicted['scores'].append(scores[~drop_mask])
+            seen['boxes'].append(boxes_set[~drop_mask])
+            seen['labels'].append(labels[~drop_mask])
+            seen['scores'].append(scores[~drop_mask])
+
+        seen['boxes'] = np.array(seen['boxes'])
 
         return true, predicted
 
