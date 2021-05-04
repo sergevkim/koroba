@@ -77,15 +77,15 @@ def optimize_boxes(
             optimizer.zero_grad()
             if mode == '3d':
                 match_boxes_loss, rows = BoxMatchingLoss.calculate_3d(
-                    p_boxes=predicted['boxes'][j],
-                    p_labels=predicted['labels'][j],
+                    seen_boxes=predicted['boxes'][j],
+                    seen_labels=predicted['labels'][j],
                     boxes=optimized_boxes,
                     scores=scores,
                 )
             else:
                 match_boxes_loss, rows = BoxMatchingLoss.calculate_2d(
-                    p_boxes=predicted['boxes'][j],
-                    p_labels=predicted['labels'][j],
+                    seen_boxes=predicted['boxes'][j],
+                    seen_labels=predicted['labels'][j],
                     boxes=optimized_boxes,
                     scores=scores,
                 )
@@ -136,7 +136,7 @@ def run_box_experiment(
         n_boxes: int = 4,
         n_classes: int = 10,
     ):
-    true, predicted = SynData.generate_box_dataset(
+    true, seen = SynData.generate_box_dataset(
         n=n,
         n_boxes=n_boxes,
         n_classes=n_classes,
@@ -153,26 +153,26 @@ def run_box_experiment(
         n=n,
         angle_threshold=.3,
     )
-    predicted['cameras'] = cameras
+    seen['cameras'] = cameras
     SynData.update_box_dataset_with_cameras(
-        seen=predicted,
+        seen=seen,
         proj=False,
     )
-    print('predicted boxes:')
+    print('seen boxes:')
 
-    for i in range(len(predicted['boxes'])):
+    for i in range(len(seen['boxes'])):
         print('box set:')
-        for j in range(len(predicted['boxes'][i])):
+        for j in range(len(seen['boxes'][i])):
             string = (
-                f"{predicted['boxes'][i][j]} |"
-                f"{predicted['labels'][i][j]} |"
-                f"{predicted['scores'][i][j]}"
+                f"{seen['boxes'][i][j]} |"
+                f"{seen['labels'][i][j]} |"
+                f"{seen['scores'][i][j]}"
             )
             print(string)
 
     # TODO: + 10 here is for complication of current experiments
     optimized = optimize_boxes(
-        predicted,
+        seen,
         n_boxes=n_boxes + 10,
         n_classes=n_classes,
         no_object_weight=0.4,

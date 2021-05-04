@@ -107,7 +107,7 @@ class SyntheticData:
         for _ in range(n):
             augmented_boxes = (
                 augment(true['boxes'][:, :3], a_threshold=center_threshold),
-                augment(true['boxes'][:, 3: -1], m_threshold=size_threshold),
+                augment(true['boxes'][:, 3:-1], m_threshold=size_threshold),
                 augment(true['boxes'][:, -1:], a_threshold=angle_threshold),
             )
             boxes_set = np.concatenate(augmented_boxes, axis=1)
@@ -122,9 +122,7 @@ class SyntheticData:
             seen['labels'].append(labels[~drop_mask])
             seen['scores'].append(scores[~drop_mask])
 
-        seen['boxes'] = np.array(seen['boxes'])
-
-        return true, predicted
+        return true, seen
 
     @staticmethod
     def update_box_dataset_with_cameras(
