@@ -1,10 +1,18 @@
+from argparse import ArgumentParser
+
 import numpy as np
+import open3d as o3d
 import torch
 import torch.nn.functional as F
-from scipy.optimize import linear_sum_assignment
 
-import koroba.utils.iou as iou
-from koroba.utils import SyntheticData as SynData
+import koroba.utils.io as io
+from koroba.losses import BoxMatchingLoss
+from koroba.utils import (
+    Camera,
+    Randomizer,
+    SyntheticData as SynData,
+    Visualizer,
+)
 
 
 def get_device():
@@ -12,85 +20,13 @@ def get_device():
     return torch.device('cuda:0')
 
 
-def check_boxes_in_camera(boxes, camera):
-    center_3d = boxes[:, :3].T
-    to_concat = (
-        center_3d,
-        np.ones((1, len(boxes))),
-    )
-    center_3d = np.concatenate(to_concat, axis=0)
-    x, y, z = camera @ center_3d
-    x /= z
-    y /= z
-    check = np.logical_and.reduce((
-        z >= .0,
-        x >= .0,
-        x <= 1.,
-        y >= .0,
-        y <= 1.
-    ))
-
-    return check
-
-
-def update_box_dataset_with_cameras(predicted):
-    for i in range(len(predicted['boxes'])):
-        if not len(predicted['boxes'][i]):
-            continue
-        mask = check_boxes_in_camera(
-            boxes=predicted['boxes'][i],
-            camera=predicted['cameras'][i],
-        )
-        for key in ['boxes', 'labels', 'scores']:
-            predicted[key][i] = predicted[key][i][mask]
-
-
-def match_boxes(
-        p_boxes,
-        p_labels,
-        boxes,
-        scores,
-    ):
-    n_p_boxes = p_boxes.shape[0]
-    if not n_p_boxes:
-        return torch.tensor(.0, dtype=torch.float, device=boxes.device), []
-
-    n_boxes = boxes.shape[0]
-    to_concat = [
-        boxes[:, :3],
-        torch.exp(boxes[:, 3: -1]),
-        boxes[:, -1:],
-    ]
-    exp_boxes = torch.cat(to_concat, dim=1)
-    repeated_boxes = exp_boxes.repeat_interleave(n_p_boxes, 0)
-    repeated_scores = scores.repeat_interleave(n_p_boxes, 0)
-    repeated_p_boxes = p_boxes.repeat(n_boxes, 1)
-    repeated_p_labels = p_labels.repeat(n_boxes)
-
-    pairwise_giou = iou.calculate_3d_giou(
-        box3d1=repeated_boxes[None, ...],
-        box3d2=repeated_p_boxes[None, ...],
-    )[0]
-    pairwise_giou = pairwise_giou.reshape(n_boxes, n_p_boxes)
-    # pairwise_l1 = torch.mean(torch.abs(repeated_boxes[:, :3] - repeated_p_boxes[:, :3]), dim=1)
-    # pairwise_l1 = pairwise_l1.reshape(n_boxes, n_p_boxes)
-    pairwise_nll = F.cross_entropy(
-        repeated_scores,
-        repeated_p_labels,
-        reduction='none',
-    )
-    pairwise_nll = pairwise_nll.reshape(n_boxes, n_p_boxes)
-    cost = pairwise_giou + pairwise_nll
-    rows, columns = linear_sum_assignment(cost.detach().cpu().numpy())
-
-    return cost[rows, columns], rows
-
-
 def optimize_boxes(
         predicted,
-        n_boxes,
-        n_classes,
+        n_boxes: int,
+        n_classes: int,
+        n_steps: int = 200,
         no_object_weight: float = 0.4,
+        mode: str = '3d',
     ):
     device = get_device()
 
@@ -98,8 +34,8 @@ def optimize_boxes(
         np.concatenate(tuple(filter(lambda x: len(x), predicted['boxes'])))
     center_mean = np.mean(initial_boxes[:, :3], axis=0)
     center_std = np.std(initial_boxes[:, :3], axis=0)
-    size_mean = np.mean(initial_boxes[:, 3: -1], axis=0)
-    size_std = np.std(initial_boxes[:, 3: -1], axis=0)
+    size_mean = np.mean(initial_boxes[:, 3:-1], axis=0)
+    size_std = np.std(initial_boxes[:, 3:-1], axis=0)
 
     to_concat = (
         np.random.normal(center_mean, center_std, (n_boxes, 3)),
@@ -110,8 +46,8 @@ def optimize_boxes(
     initial_boxes[:, 3: -1] = np.log(initial_boxes[:, 3: -1])
     initial_boxes = \
         torch.tensor(initial_boxes, dtype=torch.float, device=device)
-    boxes = initial_boxes.clone().detach()
-    boxes.requires_grad = True
+    optimized_boxes = initial_boxes.clone().detach()
+    optimized_boxes.requires_grad = True
 
     initial_scores = np.random.random((n_boxes, n_classes + 1))
     initial_scores[:, -1] = .0
@@ -132,21 +68,29 @@ def optimize_boxes(
             device=device,
         )
 
-    optimizer = torch.optim.Adam([boxes, scores], lr=0.01)
+    optimizer = torch.optim.Adam([optimized_boxes, scores], lr=0.01)
 
-    for i in range(500):
+    for i in range(n_steps):
         i_loss = torch.tensor(.0, dtype=torch.float, device=device)
 
         for j in range(len(predicted['boxes'])):
             optimizer.zero_grad()
-            match_boxes_loss, rows = match_boxes(
-                p_boxes=predicted['boxes'][j],
-                p_labels=predicted['labels'][j],
-                boxes=boxes,
-                scores=scores,
-            )
-            visible_index = check_boxes_in_camera(
-                boxes=boxes.detach().cpu().numpy(),
+            if mode == '3d':
+                match_boxes_loss, rows = BoxMatchingLoss.calculate_3d(
+                    seen_boxes=predicted['boxes'][j],
+                    seen_labels=predicted['labels'][j],
+                    boxes=optimized_boxes,
+                    scores=scores,
+                )
+            else:
+                match_boxes_loss, rows = BoxMatchingLoss.calculate_2d(
+                    seen_boxes=predicted['boxes'][j],
+                    seen_labels=predicted['labels'][j],
+                    boxes=optimized_boxes,
+                    scores=scores,
+                )
+            visible_index = Camera.check_boxes_in_camera_fov(
+                boxes=optimized_boxes.detach().cpu().numpy(),
                 camera=predicted['cameras'][j],
             )
             no_object_index = np.ones(n_boxes, dtype=np.bool)
@@ -175,23 +119,24 @@ def optimize_boxes(
         optimizer.step()
         print(f'i: {i};  loss: {i_loss.detach().cpu().numpy()}')
 
-    boxes = boxes.detach().cpu().numpy()
-    boxes[:, 3: -1] = np.exp(boxes[:, 3: -1])
+    optimized_boxes = optimized_boxes.detach().cpu().numpy()
+    optimized_boxes[:, 3: -1] = np.exp(optimized_boxes[:, 3: -1])
     scores = torch.softmax(scores, dim=1).detach().cpu().numpy()
-    return {
-        'boxes': boxes,
+    optimized = {
+        'boxes': optimized_boxes,
         'labels': np.argmax(scores, axis=1),
         'scores': np.max(scores, axis=1)
     }
 
+    return optimized
 
 
-
-def run_box_experiment():
-    n = 10
-    n_boxes = 4
-    n_classes = 10
-    true, predicted = SynData.generate_box_dataset(
+def run_box_experiment(
+        n: int = 10,
+        n_boxes: int = 4,
+        n_classes: int = 10,
+    ):
+    true, seen = SynData.generate_box_dataset(
         n=n,
         n_boxes=n_boxes,
         n_classes=n_classes,
@@ -208,30 +153,70 @@ def run_box_experiment():
         n=n,
         angle_threshold=.3,
     )
-    predicted['cameras'] = cameras
-    update_box_dataset_with_cameras(predicted)
-    print('predicted boxes:')
+    seen['cameras'] = cameras
+    SynData.update_box_dataset_with_cameras(
+        seen=seen,
+        proj=False,
+    )
+    print('seen boxes:')
 
-    for i in range(len(predicted['boxes'])):
+    for i in range(len(seen['boxes'])):
         print('box set:')
-        for j in range(len(predicted['boxes'][i])):
-            print(predicted['boxes'][i][j], '|', predicted['labels'][i][j], '|', predicted['scores'][i][j])
+        for j in range(len(seen['boxes'][i])):
+            string = (
+                f"{seen['boxes'][i][j]} |"
+                f"{seen['labels'][i][j]} |"
+                f"{seen['scores'][i][j]}"
+            )
+            print(string)
 
     # TODO: + 10 here is for complication of current experiments
     optimized = optimize_boxes(
-        predicted,
+        seen,
         n_boxes=n_boxes + 10,
         n_classes=n_classes,
         no_object_weight=0.4,
+        mode='3d',
     )
     print('true boxes:')
     for i in range(len(true['boxes'])):
         print(true['boxes'][i], '|', true['labels'][i])
     print('boxes:')
     for i in range(len(optimized['boxes'])):
-        print(optimized['boxes'][i], '|', optimized['labels'][i], '|', optimized['scores'][i])
+        string = (
+            f"{optimized['boxes'][i]} |"
+            f"{optimized['labels'][i]} |"
+            f"{optimized['scores'][i]}"
+        )
+        print(string)
 
+    return true, optimized
+
+
+def main(args):
+    Randomizer.set_seed()
+    np.set_printoptions(
+        precision=5,
+        suppress=True,
+        sign=' ',
+    )
+    true, optimized = run_box_experiment()
+    true_boxes = true['boxes']
+    optimized_boxes = optimized['boxes']
+
+    for i, box in enumerate(true_boxes):
+        io.write_bounding_box(
+            filename=f'output/true_box_{i}.pcd',
+            box=box,
+        )
+
+    for i, box in enumerate(optimized_boxes):
+        io.write_bounding_box(
+            filename=f'output/optimized_box_{i}.pcd',
+            box=box,
+        )
 
 if __name__ == '__main__':
-    np.set_printoptions(precision=5, suppress=True, sign=' ')
-    run_box_experiment()
+    parser = ArgumentParser()
+    args = parser.parse_args()
+    main(args)

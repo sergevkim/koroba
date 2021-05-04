@@ -3,6 +3,8 @@ from collections import defaultdict
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from koroba.utils import Camera
+
 
 def augment(
         x,
@@ -52,6 +54,7 @@ class SyntheticData:
             angle_threshold,
         ):
         cameras = []
+
         for _ in range(n):
             point = np.random.uniform(0.0, 1.0, 3)
             forward_vector = np.array([0.5, 0.5, 0.5]) - point
@@ -72,7 +75,7 @@ class SyntheticData:
             camera = intrinsic @ extrinsic
             cameras.append(camera)
 
-        return cameras
+        return np.array(cameras)
 
     @staticmethod
     def generate_box_dataset(
@@ -89,9 +92,9 @@ class SyntheticData:
             angle_threshold,
         ):
         to_concat = (
-            np.random.normal(.5, center_std, (n_boxes, 3)),
+            np.random.normal(0.5, center_std, (n_boxes, 3)),
             np.abs(np.random.normal(size_mean, size_std, (n_boxes, 3))),
-            np.random.uniform(.0, 2 * np.pi, (n_boxes, 1))
+            np.random.uniform(0.0, 2 * np.pi, (n_boxes, 1))
         )
         boxes = np.concatenate(to_concat, axis=1)
         true = {
@@ -99,12 +102,12 @@ class SyntheticData:
             'labels': np.random.choice(np.arange(n_classes), n_boxes)
         }
 
-        predicted = defaultdict(list)
+        seen = defaultdict(list)
 
         for _ in range(n):
             augmented_boxes = (
                 augment(true['boxes'][:, :3], a_threshold=center_threshold),
-                augment(true['boxes'][:, 3: -1], m_threshold=size_threshold),
+                augment(true['boxes'][:, 3:-1], m_threshold=size_threshold),
                 augment(true['boxes'][:, -1:], a_threshold=angle_threshold),
             )
             boxes_set = np.concatenate(augmented_boxes, axis=1)
@@ -115,9 +118,35 @@ class SyntheticData:
             )
             scores = np.ones(n_boxes)
             drop_mask = np.random.random(n_boxes) < drop_probability
-            predicted['boxes'].append(boxes_set[~drop_mask])
-            predicted['labels'].append(labels[~drop_mask])
-            predicted['scores'].append(scores[~drop_mask])
+            seen['boxes'].append(boxes_set[~drop_mask])
+            seen['labels'].append(labels[~drop_mask])
+            seen['scores'].append(scores[~drop_mask])
 
-        return true, predicted
+        return true, seen
+
+    @staticmethod
+    def update_box_dataset_with_cameras(
+            seen,
+            proj: bool = False,
+        ):
+        for i in range(len(seen['boxes'])):
+            if not len(seen['boxes'][i]):
+                continue
+            mask = Camera.check_boxes_in_camera_fov(
+                boxes=seen['boxes'][i],
+                camera=seen['cameras'][i],
+            )
+            for key in ['boxes', 'labels', 'scores']:
+                seen[key][i] = seen[key][i][mask]
+
+        if proj:
+            seen['projections'] = list()
+
+            for i, camera in enumerate(seen['cameras']):
+                boxes_set = seen['boxes'][i]
+                proj = Camera.project_boxes_onto_camera_plane(
+                    camera=camera,
+                    boxes_set=boxes_set,
+                )
+                seen['projections'].append(proj)
 
