@@ -5,7 +5,7 @@ from scipy.optimize import linear_sum_assignment
 try:
     from .iou import calculate_2d_giou, calculate_3d_giou
 except:
-    print('install cuda ops')
+    print('WARNING!!! Install cuda ops!')
 
 
 class BoxMatchingLoss:

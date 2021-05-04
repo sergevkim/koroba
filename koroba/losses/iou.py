@@ -428,7 +428,7 @@ def calculate_3d_giou(
     return giou_loss, iou3d
 
 
-def calcluate_2d_giou(
+def calculate_2d_giou(
         box1: torch.Tensor,
         box2: torch.Tensor,
         enclosing_type: str = 'smallest',
