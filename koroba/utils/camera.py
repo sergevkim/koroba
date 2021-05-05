@@ -1,4 +1,6 @@
 import numpy as np
+import torch
+import torch.nn.functional as F
 from torch import Tensor
 
 from koroba.utils import Box
@@ -42,26 +44,40 @@ class Camera:
             np.ones(shape=(1, len(vertices))),
         )
         vertices = np.concatenate(to_concat, axis=0)
-        vertices_projection = camera @ vertices
+        x, y, z = camera @ vertices
+        x = torch.tensor(x / z)
+        y = torch.tensor(y / z)
 
-        return vertices_projection
+        return x, y
 
-    @classmethod
+    @classmethod #TODO vectorize
     def project_boxes_onto_camera_plane(
             cls,
             boxes: Tensor,
             camera: np.ndarray,
+            mode: str = 'minmax',
         ) -> Tensor:
-        boxes_vertices_list = list()
+        boxes_projections = list()
 
         for box in boxes:
-            vertices_projection = cls.project_single_box_onto_camera_plane(
+            x, y = cls.project_single_box_onto_camera_plane(
                 box=box,
                 camera=camera,
             )
-            point_min = vertices_projection.min(axis=0)
-            point_max = vertices_projection.max(axis=0)
+            if mode == 'minmax':
+                x_min, _ = x.min(axis=0)
+                y_min, _ = y.min(axis=0)
+                x_max, _ = x.max(axis=0)
+                y_max, _ = y.max(axis=0)
+            elif mode == 'attention':
+                x_min = x @ F.softmin(x, dim=0)
+                y_min = y @ F.softmin(y, dim=0)
+                x_max = x @ F.softmax(x, dim=0)
+                y_max = y @ F.softmax(y, dim=0)
+
+            point_min = np.array((x_min, y_min))
+            point_max = np.array((x_max, y_max))
             box_projection = np.array((point_min, point_max))
             boxes_projections.append(box_projection)
 
-        return boxes_projections
+        return torch.tensor(boxes_projections)

@@ -3,6 +3,7 @@ from typing import Union
 
 import numpy as np
 import open3d as o3d
+import torch
 from scipy.spatial.transform import Rotation
 from torch import Tensor
 
@@ -37,7 +38,10 @@ class Box:
             center + rotation.apply(sizes / 2),
         )
 
-        return np.array(two_points)
+        if type(box) is Tensor:
+            return torch.stack(two_points)
+        elif type(box) is np.ndarray:
+            return np.array(two_points)
 
     @classmethod
     def seven2eight(cls, box: Union[np.ndarray, Tensor]):

@@ -79,7 +79,8 @@ def optimize_boxes(
             seen_boxes = predicted['boxes'][j]
             seen_labels = predicted['labels'][j]
             camera = predicted['cameras'][j]
-            repeated = cls.prepare_repeated(
+
+            repeated = BoxMatchingLoss.prepare_repeated(
                 seen_boxes=seen_boxes,
                 seen_labels=seen_labels,
                 boxes=optimized_boxes,
@@ -96,7 +97,7 @@ def optimize_boxes(
                     n_seen_boxes=len(seen_boxes),
                     repeated_boxes=repeated_boxes,
                     repeated_scores=repeated_scores,
-                    repeated_seen_boxes=repeated_seen_scores,
+                    repeated_seen_boxes=repeated_seen_boxes,
                     repeated_seen_labels=repeated_seen_labels,
                 )
             else:
@@ -105,7 +106,7 @@ def optimize_boxes(
                     n_seen_boxes=len(seen_boxes),
                     repeated_boxes=repeated_boxes,
                     repeated_scores=repeated_scores,
-                    repeated_seen_boxes=repeated_seen_scores,
+                    repeated_seen_boxes=repeated_seen_boxes,
                     repeated_seen_labels=repeated_seen_labels,
                 )
 
