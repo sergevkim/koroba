@@ -1,3 +1,5 @@
+from typing import Tuple, Union
+
 import numpy as np
 import open3d as o3d
 import plotly.graph_objects as go
@@ -9,6 +11,7 @@ class Visualizer:
     @staticmethod
     def get_geometry(
             bbox: o3d.geometry.OrientedBoundingBox,
+            color: Union[str, Tuple[float]] = (0.0, 0.0, 1.0),
             spheres_flag: bool = False,
         ):
         bbox_vertices = np.asarray(bbox.get_box_points())
@@ -16,6 +19,15 @@ class Visualizer:
             points=o3d.utility.Vector3dVector(bbox_vertices),
             lines=o3d.utility.Vector2iVector(LINES),
         )
+
+        if color == 'red':
+            color = (1.0, 0.0, 0.0)
+        elif color == 'green':
+            color = (0.0, 1.0, 0.0)
+        elif color == 'blue':
+            color = (0.0, 0.0, 1.0)
+
+        line_set.paint_uniform_color(np.array(color))
 
         if spheres_flag:
             bbox_spheres = add_points([], bbox_vertices, color='r', size='big')
@@ -84,6 +96,11 @@ class Visualizer:
                 points = np.asarray(geometry.points)
                 lines = np.asarray(geometry.lines)
 
+                if geometry.has_colors():
+                    colors = np.asarray(geometry.colors)
+                else:
+                    colors = 'darkblue'
+
                 x0 = points[:, 0][lines[:, 0]]
                 y0 = points[:, 1][lines[:, 0]]
                 z0 = points[:, 2][lines[:, 0]]
@@ -102,7 +119,7 @@ class Visualizer:
                             colorscale='Viridis',
                         ),
                         line=dict(
-                            color='darkblue',
+                            color=colors,
                             width=2
                         )
                     )
