@@ -149,6 +149,11 @@ def run_box_experiment(
         size_threshold=0.3,
         angle_threshold=0.3,
     )
+    for i, box in enumerate(true['boxes']):
+        io.write_bounding_box(
+            filename=f'output/true_box_{i}.pcd',
+            box=box,
+        )
     cameras = SynData.generate_camera_dataset(
         n=n,
         angle_threshold=.3,

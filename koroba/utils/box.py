@@ -19,8 +19,7 @@ class Box:
     on the all point cloud.
     '''
     @staticmethod
-    def seven2two(box: Union[np.ndarray, Tensor]):
-        # TODO check coordinates
+    def seven2eight(box: Union[np.ndarray, Tensor]):
         # TODO vectorize
         center = box[:3]
         sizes = box[3:6]
@@ -32,27 +31,16 @@ class Box:
         ]
         rotation = Rotation.from_matrix(rotation_matrix)
 
-        two_points = (
-            center + rotation.apply(-sizes / 2),
-            center + rotation.apply(sizes / 2),
-        )
-
-        return np.array(two_points)
-
-    @classmethod
-    def seven2eight(cls, box: Union[np.ndarray, Tensor]):
-        two_points = cls.seven2two(box)
-        eight_points = list()
+        vertices = list()
 
         for i in range(2):
             for j in range(2):
                 for k in range(2):
-                    x = two_points[i][0]
-                    y = two_points[j][1]
-                    z = two_points[k][2]
-                    eight_points.append((x, y, z))
+                    mask = ((-1) ** i, (-1) ** j, (-1) ** k)
+                    vertex = center + rotation.apply(sizes * mask / 2)
+                    vertices.append(vertex)
 
-        return np.array(eight_points)
+        return np.array(vertices)
 
     @staticmethod
     def eight2seven(box: Union[np.ndarray, Tensor]):
@@ -79,8 +67,6 @@ class Box:
 
 
 if __name__ == '__main__':
-    box = np.array([0, 0, 0, 1, 2, 3, np.pi / 4])
-    two = Box.seven2two(box)
-    print(f'two:\n{two}\n')
+    box = np.array([0, 0, 0, 1, 2, 3, np.pi / 6])
     eight = Box.seven2eight(box)
     print(f'eight:\n{eight}\n')
