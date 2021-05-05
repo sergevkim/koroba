@@ -34,12 +34,12 @@ class Camera:
             box: Tensor,
             camera: np.ndarray,
         ) -> Tensor:
-        assert box.shape == (7, 3)
-        vertices = Box.seven2eight(box).T
+        assert box.shape == (7, )
+        vertices = Box.seven2eight(box)
         assert vertices.shape == (8, 3)
         to_concat = (
-            vertices,
-            np.ones(shape=(1, len(vertices_3d))),
+            vertices.T,
+            np.ones(shape=(1, len(vertices))),
         )
         vertices = np.concatenate(to_concat, axis=0)
         vertices_projection = camera @ vertices

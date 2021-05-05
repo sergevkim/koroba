@@ -84,3 +84,4 @@ if __name__ == '__main__':
     print(f'two:\n{two}\n')
     eight = Box.seven2eight(box)
     print(f'eight:\n{eight}\n')
+    print(eight.shape)
