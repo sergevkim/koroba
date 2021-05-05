@@ -49,30 +49,37 @@ class SyntheticData:
         return layout, layouts
 
     @staticmethod
+    def generate_camera(angle_threshold: float):
+        point = np.random.uniform(0.0, 1.0, 3)
+        forward_vector = np.array([0.5, 0.5, 0.5]) - point
+        forward_vector = Rotation.from_rotvec(
+            augment(np.zeros(3), a_threshold=angle_threshold),
+        ).apply(forward_vector)
+        rotation_matrix = create_rotation_matrix(forward_vector)
+        camera_pose = np.eye(4)
+        camera_pose[:3, :3] = rotation_matrix
+        camera_pose[:3, 3] = point
+
+        extrinsic = np.linalg.inv(camera_pose)
+        intrinsic = np.array([
+            [0.5, 0.0, 0.5, 0.0],
+            [0.0, 0.5, 0.5, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+        ])
+        camera = intrinsic @ extrinsic
+
+        return camera
+
+    @classmethod
     def generate_camera_dataset(
-            n,
-            angle_threshold,
+            cls,
+            n: int,
+            angle_threshold: float,
         ):
-        cameras = []
+        cameras = list()
 
         for _ in range(n):
-            point = np.random.uniform(0.0, 1.0, 3)
-            forward_vector = np.array([0.5, 0.5, 0.5]) - point
-            forward_vector = Rotation.from_rotvec(
-                augment(np.zeros(3), a_threshold=angle_threshold),
-            ).apply(forward_vector)
-            rotation_matrix = create_rotation_matrix(forward_vector)
-            camera_pose = np.eye(4)
-            camera_pose[:3, :3] = rotation_matrix
-            camera_pose[:3, 3] = point
-
-            extrinsic = np.linalg.inv(camera_pose)
-            intrinsic = np.array([
-                [0.5, 0.0, 0.5, 0.0],
-                [0.0, 0.5, 0.5, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-            ])
-            camera = intrinsic @ extrinsic
+            camera = cls.generate_camera(angle_threshold=angle_threshold)
             cameras.append(camera)
 
         return np.array(cameras)

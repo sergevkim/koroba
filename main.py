@@ -75,23 +75,44 @@ def optimize_boxes(
 
         for j in range(len(predicted['boxes'])):
             optimizer.zero_grad()
+
+            seen_boxes = predicted['boxes'][j]
+            seen_labels = predicted['labels'][j]
+            camera = predicted['cameras'][j]
+
+            repeated = BoxMatchingLoss.prepare_repeated(
+                seen_boxes=seen_boxes,
+                seen_labels=seen_labels,
+                boxes=optimized_boxes,
+                scores=scores,
+            )
+            repeated_boxes = repeated['boxes']
+            repeated_scores = repeated['scores']
+            repeated_seen_boxes = repeated['seen_boxes']
+            repeated_seen_labels = repeated['seen_labels']
+
             if mode == '3d':
                 match_boxes_loss, rows = BoxMatchingLoss.calculate_3d(
-                    seen_boxes=predicted['boxes'][j],
-                    seen_labels=predicted['labels'][j],
-                    boxes=optimized_boxes,
-                    scores=scores,
+                    n_boxes=len(optimized_boxes),
+                    n_seen_boxes=len(seen_boxes),
+                    repeated_boxes=repeated_boxes,
+                    repeated_scores=repeated_scores,
+                    repeated_seen_boxes=repeated_seen_boxes,
+                    repeated_seen_labels=repeated_seen_labels,
                 )
             else:
                 match_boxes_loss, rows = BoxMatchingLoss.calculate_2d(
-                    seen_boxes=predicted['boxes'][j],
-                    seen_labels=predicted['labels'][j],
-                    boxes=optimized_boxes,
-                    scores=scores,
+                    n_boxes=len(optimized_boxes),
+                    n_seen_boxes=len(seen_boxes),
+                    repeated_boxes=repeated_boxes,
+                    repeated_scores=repeated_scores,
+                    repeated_seen_boxes=repeated_seen_boxes,
+                    repeated_seen_labels=repeated_seen_labels,
                 )
+
             visible_index = Camera.check_boxes_in_camera_fov(
                 boxes=optimized_boxes.detach().cpu().numpy(),
-                camera=predicted['cameras'][j],
+                camera=camera,
             )
             no_object_index = np.ones(n_boxes, dtype=np.bool)
             no_object_index[rows] = False

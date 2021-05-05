@@ -3,6 +3,7 @@ from typing import Union
 
 import numpy as np
 import open3d as o3d
+import torch
 from scipy.spatial.transform import Rotation
 from torch import Tensor
 
@@ -70,3 +71,4 @@ if __name__ == '__main__':
     box = np.array([0, 0, 0, 1, 2, 3, np.pi / 6])
     eight = Box.seven2eight(box)
     print(f'eight:\n{eight}\n')
+    print(eight.shape)
