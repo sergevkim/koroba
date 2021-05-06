@@ -81,16 +81,7 @@ def test_boxes_projection():
     assert type(boxes_projections) is Tensor
 
 
-def test_box_format_translation():
-    box = np.array([0, 0, 0, 1, 2, 3, np.pi / 4])
-    two = Box.seven2two(box)
-    assert two.shape == (2, 3)
-    eight = Box.seven2eight(box)
-    assert eight.shape == (8, 3)
-
-
 if __name__ == '__main__':
     test_box_in_camera_fov_checking()
     test_single_box_projection()
     test_boxes_projection()
-    test_box_format_translation()

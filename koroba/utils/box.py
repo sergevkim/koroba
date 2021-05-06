@@ -38,14 +38,40 @@ class Box:
             for j in range(2):
                 for k in range(2):
                     mask = ((-1) ** i, (-1) ** j, (-1) ** k)
+                    if type(box) is Tensor:
+                        mask = torch.tensor(mask)
+                    print('!', center, sizes, mask)
                     vertex = center + rotation.apply(sizes * mask / 2)
                     vertices.append(vertex)
 
-        return np.array(vertices)
+        if type(box) is Tensor:
+            return torch.stack(vertices, dim=0)
+        else:
+            return np.array(vertices)
 
     @staticmethod
-    def eight2seven(box: Union[np.ndarray, Tensor]):
-        pass
+    def eight2seven(vertices: Union[np.ndarray, Tensor]):
+        points = o3d.utility.Vector3dVector(np.array(vertices))
+        bbox = o3d.geometry.OrientedBoundingBox.create_from_points(points)
+        center = bbox.center
+        extent = bbox.extent
+        R = bbox.R
+
+        import ipdb; ipdb.set_trace()
+
+        '''
+        center = vertices.sum(axis=0)
+        sizes = vertices.sum(axis=0)
+        alpha = np.array(np.pi / 4)[None, ...]
+
+        if type(vertices) is Tensor:
+            alpha = torch.tensor(alpha)
+            box = torch.cat((center, sizes, alpha), dim=0)
+        else:
+            box = np.concatenate((center, sizes, alpha), axis=0)
+        '''
+
+        return box
 
     @staticmethod
     def estimate_horizontal_bounding_box(points: np.ndarray):
