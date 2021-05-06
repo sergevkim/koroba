@@ -40,7 +40,6 @@ class Box:
                     mask = ((-1) ** i, (-1) ** j, (-1) ** k)
                     if type(box) is Tensor:
                         mask = torch.tensor(mask)
-                    print('!', center, sizes, mask)
                     vertex = center + rotation.apply(sizes * mask / 2)
                     vertices.append(vertex)
 
@@ -51,25 +50,33 @@ class Box:
 
     @staticmethod
     def eight2seven(vertices: Union[np.ndarray, Tensor]):
-        points = o3d.utility.Vector3dVector(np.array(vertices))
-        bbox = o3d.geometry.OrientedBoundingBox.create_from_points(points)
-        center = bbox.center
-        extent = bbox.extent
-        R = bbox.R
-
-        import ipdb; ipdb.set_trace()
-
-        '''
         center = vertices.sum(axis=0)
-        sizes = vertices.sum(axis=0)
-        alpha = np.array(np.pi / 4)[None, ...]
+        # right upper left lower in xy plane
+        right_index, far_index, high_index = vertices.argmax(axis=0)
+        left_index, _, low_index = vertices.argmin(axis=0)
+        x_right, y_right, _ = vertices[right_index]
+        x_far, y_far, _ = vertices[far_index]
+        x_left, y_left, _ = vertices[left_index]
+        _, _, z_high = vertices[high_index]
+        _, _, z_low = vertices[low_index]
+
+        far_right_x_delta = np.abs(x_right - x_far)
+        far_right_y_delta = np.abs(y_right - y_far)
+        far_left_x_delta = np.abs(x_left - x_far)
+        far_left_y_delta = np.abs(y_left - y_far)
+        angle = np.arctan(far_right_x_delta / far_right_y_delta)
+        y_size = np.sqrt(far_right_x_delta ** 2 + far_right_y_delta ** 2)
+        x_size = np.sqrt(far_left_x_delta ** 2 + far_left_y_delta ** 2)
+        z_size = z_high - z_low
 
         if type(vertices) is Tensor:
-            alpha = torch.tensor(alpha)
-            box = torch.cat((center, sizes, alpha), dim=0)
+            extent = torch.tensor([x_size, y_size, z_size])
+            angle = torch.tensor([angle])
+            box = torch.cat((center, extent, angle), dim=0)
         else:
-            box = np.concatenate((center, sizes, alpha), axis=0)
-        '''
+            extent = np.array([x_size, y_size, z_size])
+            angle = np.array([angle])
+            box = np.concatenate((center, extent, angle), axis=0)
 
         return box
 

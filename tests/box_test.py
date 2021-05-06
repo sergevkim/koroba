@@ -33,7 +33,8 @@ def test_box_format_translation_numpy():
     assert eight.shape == (8, 3)
     seven = Box.eight2seven(eight)
     assert seven.shape == (7, )
-    assert (seven == box).all()
+    diff = np.linalg.norm(seven - box)
+    assert diff < 1e-6
 
 
 def test_box_format_translation_torch():
@@ -42,7 +43,8 @@ def test_box_format_translation_torch():
     assert eight.shape == (8, 3)
     seven = Box.eight2seven(eight)
     assert seven.shape == (7, )
-    assert (seven == box).all()
+    diff = np.linalg.norm(seven - box)
+    assert diff < 1e-6
 
 
 if __name__ == '__main__':
