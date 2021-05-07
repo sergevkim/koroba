@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 
+from koroba.utils import Camera
+
 try:
     from .iou import calculate_2d_giou, calculate_3d_giou
 except:
@@ -86,6 +88,7 @@ class BoxMatchingLoss:
             repeated_scores,
             repeated_seen_boxes,
             repeated_seen_labels,
+            camera,
             giou_coef: float = 0.5,
             nll_coef: float = 0.5,
             l1_coef: float = 0.0,

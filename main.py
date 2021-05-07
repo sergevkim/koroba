@@ -13,6 +13,12 @@ from koroba.utils import (
     SyntheticData as SynData,
     Visualizer,
 )
+from configs.synthetic_config import (
+    CommonArguments,
+    DataArguments,
+    RunArhuments,
+    SpecificArguments,
+)
 
 
 def get_device():
@@ -21,7 +27,7 @@ def get_device():
 
 
 def optimize_boxes(
-        predicted,
+        seen,
         n_boxes: int,
         n_classes: int,
         n_steps: int = 200,
@@ -31,7 +37,7 @@ def optimize_boxes(
     device = get_device()
 
     initial_boxes = \
-        np.concatenate(tuple(filter(lambda x: len(x), predicted['boxes'])))
+        np.concatenate(tuple(filter(lambda x: len(x), seen['boxes'])))
     center_mean = np.mean(initial_boxes[:, :3], axis=0)
     center_std = np.std(initial_boxes[:, :3], axis=0)
     size_mean = np.mean(initial_boxes[:, 3:-1], axis=0)
@@ -56,14 +62,14 @@ def optimize_boxes(
     scores = initial_scores.clone().detach()
     scores.requires_grad = True
 
-    for i in range(len(predicted['boxes'])):
-        predicted['boxes'][i] = torch.tensor(
-            predicted['boxes'][i],
+    for i in range(len(seen['boxes'])):
+        seen['boxes'][i] = torch.tensor(
+            seen['boxes'][i],
             dtype=torch.float,
             device=device,
         )
-        predicted['labels'][i] = torch.tensor(
-            predicted['labels'][i],
+        seen['labels'][i] = torch.tensor(
+            seen['labels'][i],
             dtype=torch.long,
             device=device,
         )
@@ -73,12 +79,12 @@ def optimize_boxes(
     for i in range(n_steps):
         i_loss = torch.tensor(.0, dtype=torch.float, device=device)
 
-        for j in range(len(predicted['boxes'])):
+        for j in range(len(seen['boxes'])):
             optimizer.zero_grad()
 
-            seen_boxes = predicted['boxes'][j]
-            seen_labels = predicted['labels'][j]
-            camera = predicted['cameras'][j]
+            seen_boxes = seen['boxes'][j]
+            seen_labels = seen['labels'][j]
+            camera = seen['cameras'][j]
 
             repeated = BoxMatchingLoss.prepare_repeated(
                 seen_boxes=seen_boxes,
@@ -108,6 +114,7 @@ def optimize_boxes(
                     repeated_scores=repeated_scores,
                     repeated_seen_boxes=repeated_seen_boxes,
                     repeated_seen_labels=repeated_seen_labels,
+                    camera=camera,
                 )
 
             visible_index = Camera.check_boxes_in_camera_fov(
@@ -135,7 +142,7 @@ def optimize_boxes(
             loss = loss / max(n_matched + n_no_object, 1)
             i_loss += loss
 
-        i_loss = i_loss / len(predicted['boxes'])
+        i_loss = i_loss / len(seen['boxes'])
         i_loss.backward()
         optimizer.step()
         print(f'i: {i};  loss: {i_loss.detach().cpu().numpy()}')
@@ -244,5 +251,20 @@ def main(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    default_args_dict = {
+        **vars(CommonArguments()),
+        **vars(DataArguments()),
+        **vars(RunArguments()),
+        **vars(SpecificArguments()),
+    }
+
+    for arg, value in default_args_dict.items():
+        parser.add_argument(
+            f'--{arg}',
+            type=type(value),
+            default=value,
+            help=f'<{arg}>, default: {value}',
+        )
+
     args = parser.parse_args()
     main(args)
