@@ -8,13 +8,25 @@ from koroba.utils import SyntheticData as SynData
 
 class SyntheticDataModule(BaseDataModule):
     def __init__(
+            batch_size: int = 1,
             n_boxes: int = 10,
             n_classes: int = 10,
         ):
+        self.batch_size = batch_size
         self.n_boxes = n_boxes
         self.n_classes = n_classes
 
-    def setup():
+    def setup(
+            center_std: float
+            angle_threshold: float = 0.3,
+            center_std: float = 0.2,
+            center_threshold: float = 0.02,
+            class_probability: float = 0.1,
+            drop_probability: float = 0.2,
+            size_mean: float = 0.05,
+            size_std: float = 0.02,
+            size_threshold: float = 0.3,
+        ):
         self.true, self.seen = SynData.generate_box_dataset(
             n=n,
             n_boxes=self.n_boxes,

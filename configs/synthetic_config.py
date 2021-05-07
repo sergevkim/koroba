@@ -16,8 +16,15 @@ class CommonArguments:
 
 @dataclass
 class DataArguments:
+    angle_threshold: float = 0.3,
     batch_size: int = 1
-    data_path: Path = Path('./data')
+    center_std: float = 0.2,
+    center_threshold: float = 0.02,
+    class_probability: float = 0.1,
+    drop_probability: float = 0.2,
+    size_mean: float = 0.05,
+    size_std: float = 0.02,
+    size_threshold: float = 0.3,
 
 
 @dataclass
