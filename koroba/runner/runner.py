@@ -83,7 +83,7 @@ class Runner:
                 )
 
             visible_index = Camera.check_boxes_in_camera_fov(
-                boxes=optimized_boxes.detach().cpu().numpy(),
+                boxes=optimized_boxes.detach(), #TODO remove detach
                 camera=camera,
             )
             no_object_index = np.ones(len(optimized_boxes), dtype=np.bool)
