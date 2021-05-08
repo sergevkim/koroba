@@ -18,11 +18,11 @@ def test_box_in_camera_fov_checking():
     assert camera.shape == (3, 4)
 
     to_concat = (
-        np.random.normal(0.5, 0.2, (10, 3)),
-        np.abs(np.random.normal(0.05, 0.02, (10, 3))),
-        np.random.uniform(0.0, 2 * np.pi, (10, 1))
+        torch.tensor(np.random.normal(0.5, 0.2, (10, 3)), dtype=torch.float),
+        torch.tensor(np.abs(np.random.normal(0.05, 0.02, (10, 3))), dtype=torch.float),
+        torch.tensor(np.random.uniform(0.0, 2 * np.pi, (10, 1)), dtype=torch.float),
     )
-    boxes = np.concatenate(to_concat, axis=1)
+    boxes = torch.cat(to_concat, axis=1)
 
     Camera.check_boxes_in_camera_fov(
         boxes=boxes,
@@ -35,12 +35,11 @@ def test_single_box_projection():
     assert camera.shape == (3, 4)
 
     to_concat = (
-        np.random.normal(0.5, 0.2, (10, 3)),
-        np.abs(np.random.normal(0.05, 0.02, (10, 3))),
-        np.random.uniform(0.0, 2 * np.pi, (10, 1))
+        torch.tensor(np.random.normal(0.5, 0.2, (10, 3)), dtype=torch.float),
+        torch.tensor(np.abs(np.random.normal(0.05, 0.02, (10, 3))), dtype=torch.float),
+        torch.tensor(np.random.uniform(0.0, 2 * np.pi, (10, 1)), dtype=torch.float),
     )
-    boxes = np.concatenate(to_concat, axis=1)
-    boxes = torch.tensor(boxes, dtype=torch.float)
+    boxes = torch.cat(to_concat, axis=1)
 
     x, y = Camera.project_single_box_onto_camera_plane(
         box=boxes[0],
@@ -57,12 +56,11 @@ def test_boxes_projection():
     assert camera.shape == (3, 4)
 
     to_concat = (
-        np.random.normal(0.5, 0.2, (10, 3)),
-        np.abs(np.random.normal(0.05, 0.02, (10, 3))),
-        np.random.uniform(0.0, 2 * np.pi, (10, 1))
+        torch.tensor(np.random.normal(0.5, 0.2, (10, 3)), dtype=torch.float),
+        torch.tensor(np.abs(np.random.normal(0.05, 0.02, (10, 3))), dtype=torch.float),
+        torch.tensor(np.random.uniform(0.0, 2 * np.pi, (10, 1)), dtype=torch.float),
     )
-    boxes = np.concatenate(to_concat, axis=1)
-    boxes = torch.tensor(boxes, dtype=torch.float)
+    boxes = torch.cat(to_concat, axis=1)
 
     boxes_projections = Camera.project_boxes_onto_camera_plane(
         boxes=boxes,

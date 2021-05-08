@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
+import torch
 from scipy.spatial.transform import Rotation
 
 from koroba.utils import Camera
@@ -60,8 +61,8 @@ class SyntheticData:
         camera_pose[:3, :3] = rotation_matrix
         camera_pose[:3, 3] = point
 
-        extrinsic = np.linalg.inv(camera_pose)
-        intrinsic = np.array([
+        extrinsic = torch.tensor(np.linalg.inv(camera_pose), dtype=torch.float)
+        intrinsic = torch.tensor([
             [0.5, 0.0, 0.5, 0.0],
             [0.0, 0.5, 0.5, 0.0],
             [0.0, 0.0, 1.0, 0.0],
@@ -82,7 +83,7 @@ class SyntheticData:
             camera = cls.generate_camera(angle_threshold=angle_threshold)
             cameras.append(camera)
 
-        return np.array(cameras)
+        return torch.tensor(cameras)
 
     @staticmethod
     def generate_box_dataset(

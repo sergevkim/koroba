@@ -12,6 +12,9 @@ def write_bounding_box(
         box: Union[np.ndarray, Tensor],
     ) -> None:
     assert len(box) == 7 or len(box) == 8
+    if type(box) is Tensor:
+        box = box.detach().cpu().numpy()
+
     if len(box) == 7:
         box = Box.seven2eight(box)
 
