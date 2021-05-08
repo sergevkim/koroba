@@ -8,17 +8,21 @@ from koroba.utils import SyntheticData as SynData
 
 class SyntheticDataModule(BaseDataModule):
     def __init__(
+            self,
             batch_size: int = 1,
             device: torch.device = torch.device('cpu'),
             n_boxes: int = 10,
+            n_cameras: int = 10,
             n_classes: int = 10,
         ):
         self.batch_size = batch_size
         self.device = device
         self.n_boxes = n_boxes
+        self.n_cameras = n_cameras
         self.n_classes = n_classes
 
     def setup(
+            self,
             angle_threshold: float = 0.3,
             center_std: float = 0.2,
             center_threshold: float = 0.02,
@@ -29,7 +33,7 @@ class SyntheticDataModule(BaseDataModule):
             size_threshold: float = 0.3,
         ):
         self.true, self.seen = SynData.generate_box_dataset(
-            n=n,
+            n=self.n_cameras,
             n_boxes=self.n_boxes,
             n_classes=self.n_classes,
             center_std=center_std,
@@ -47,8 +51,8 @@ class SyntheticDataModule(BaseDataModule):
                 box=box,
             )
         cameras = SynData.generate_camera_dataset(
-            n=n,
-            angle_threshold=.3,
+            n=self.n_cameras,
+            angle_threshold=0.3,
         )
         self.seen['cameras'] = cameras
         SynData.update_box_dataset_with_cameras(

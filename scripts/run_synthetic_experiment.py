@@ -1,3 +1,5 @@
+from argparse import ArgumentParser
+
 from koroba.datamodules import SyntheticDataModule
 from koroba.runner import Runner
 from koroba.utils import Randomizer
@@ -5,7 +7,7 @@ from koroba.utils import Randomizer
 from configs.synthetic_experiment_config import (
     CommonArguments,
     DataArguments,
-    RunArhuments,
+    RunArguments,
     SpecificArguments,
 )
 
@@ -17,6 +19,7 @@ def main(args):
         batch_size=args.batch_size,
         device=args.device,
         n_boxes=args.n_boxes,
+        n_cameras=args.n_cameras,
         n_classes=args.n_classes,
     )
     datamodule.setup(
