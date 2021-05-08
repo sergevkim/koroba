@@ -61,32 +61,6 @@ class SyntheticDataModule(BaseDataModule):
         )
 
 
-        initial_boxes = \
-            np.concatenate(tuple(filter(lambda x: len(x), self.seen['boxes'])))
-        center_mean = np.mean(initial_boxes[:, :3], axis=0)
-        center_std = np.std(initial_boxes[:, :3], axis=0)
-        size_mean = np.mean(initial_boxes[:, 3:-1], axis=0)
-        size_std = np.std(initial_boxes[:, 3:-1], axis=0)
-
-        to_concat = (
-            np.random.normal(center_mean, center_std, (self.n_boxes, 3)),
-            np.abs(np.random.normal(size_mean, size_std, (self.n_boxes, 3))),
-            np.random.uniform(0.0, 2 * np.pi, (self.n_boxes, 1)),
-        )
-        initial_boxes = np.concatenate(to_concat, axis=1)
-        initial_boxes[:, 3:-1] = np.log(initial_boxes[:, 3:-1])
-        initial_boxes = \
-            torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
-        optimized_boxes = initial_boxes.clone().detach()
-        optimized_boxes.requires_grad = True
-
-        initial_scores = np.random.random((self.n_boxes, self.n_classes + 1))
-        initial_scores[:, -1] = 0.0
-        initial_scores = \
-            torch.tensor(initial_scores, dtype=torch.float, device=self.device)
-        optimized_scores = initial_scores.clone().detach()
-        optimized_scores.requires_grad = True
-
         for i in range(len(self.seen['boxes'])):
             self.seen['boxes'][i] = torch.tensor(
                 self.seen['boxes'][i],
@@ -98,6 +72,35 @@ class SyntheticDataModule(BaseDataModule):
                 dtype=torch.long,
                 device=self.device,
             )
+
+        initial_boxes = \
+            torch.cat(tuple(filter(lambda x: len(x), self.seen['boxes'])))
+        center_mean = initial_boxes[:, :3].mean(axis=0)
+        center_std = initial_boxes[:, :3].std(axis=0)
+        size_mean = initial_boxes[:, 3:-1].mean(axis=0)
+        size_std = initial_boxes[:, 3:-1].std(axis=0)
+
+        to_concat = (
+            torch.normal(center_mean, center_std, (self.n_boxes, 3)),
+            torch.abs(torch.normal(size_mean, size_std, (self.n_boxes, 3))),
+            torch.tensor(
+                np.random.uniform(0.0, 2 * np.pi, (self.n_boxes, 1)),
+                dtype=torch.float,
+            ),
+        )
+        initial_boxes = torch.cat(to_concat, axis=1)
+        initial_boxes[:, 3:-1] = torch.log(initial_boxes[:, 3:-1])
+        initial_boxes = \
+            torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
+        optimized_boxes = initial_boxes.clone().detach()
+        optimized_boxes.requires_grad = True
+
+        initial_scores = np.random.random((self.n_boxes, self.n_classes + 1))
+        initial_scores[:, -1] = 0.0
+        initial_scores = \
+            torch.tensor(initial_scores, dtype=torch.float, device=self.device)
+        optimized_scores = initial_scores.clone().detach()
+        optimized_scores.requires_grad = True
 
         self.optimized = {
             'boxes': optimized_boxes,
