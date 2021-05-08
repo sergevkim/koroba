@@ -11,6 +11,16 @@ except:
 
 
 class BoxMatchingLoss:
+    def __init__(
+            self,
+            giou_coef: float = 0.5,
+            nll_coef: float = 0.5,
+            l1_coef: float = 0.0,
+        ):
+        self.giou_coef = giou_coef
+        self.nll_coef = nll_coef
+        self.l1_coef = l1_coef
+
     @staticmethod
     def prepare_repeated(
             seen_boxes,
@@ -43,17 +53,14 @@ class BoxMatchingLoss:
 
         return repeated
 
-    @staticmethod
     def calculate_3d(
+            self,
             n_boxes: int,
             n_seen_boxes: int,
             repeated_boxes,
             repeated_scores,
             repeated_seen_boxes,
             repeated_seen_labels,
-            giou_coef: float = 0.5,
-            nll_coef: float = 0.5,
-            l1_coef: float = 0.0,
         ):
         pairwise_giou, _ = calculate_3d_giou(
             box3d1=repeated_boxes[None, ...],
@@ -72,16 +79,16 @@ class BoxMatchingLoss:
         )
         pairwise_nll = pairwise_nll.reshape(n_boxes, n_seen_boxes)
         cost = (
-            giou_coef * pairwise_giou +
-            nll_coef * pairwise_nll +
-            l1_coef * pairwise_l1
+            self.giou_coef * pairwise_giou +
+            self.nll_coef * pairwise_nll +
+            self.l1_coef * pairwise_l1
         )
         rows, columns = linear_sum_assignment(cost.detach().cpu().numpy())
 
         return cost[rows, columns], rows
 
-    @staticmethod
     def calculate_2d(
+            self,
             n_boxes: int,
             n_seen_boxes: int,
             repeated_boxes,
@@ -89,9 +96,6 @@ class BoxMatchingLoss:
             repeated_seen_boxes,
             repeated_seen_labels,
             camera,
-            giou_coef: float = 0.5,
-            nll_coef: float = 0.5,
-            l1_coef: float = 0.0,
         ):
         boxes_projections = Camera.project_boxes_onto_camera_plane(
             boxes=repeated_boxes,
@@ -125,9 +129,9 @@ class BoxMatchingLoss:
         )
         pairwise_nll = pairwise_nll.reshape(n_boxes, n_seen_boxes)
         cost = (
-            giou_coef * pairwise_giou +
-            nll_coef * pairwise_nll +
-            l1_coef * pairwise_l1
+            self.giou_coef * pairwise_giou +
+            self.nll_coef * pairwise_nll +
+            self.l1_coef * pairwise_l1
         )
         rows, columns = linear_sum_assignment(cost.detach().cpu().numpy())
 

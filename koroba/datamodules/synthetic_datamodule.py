@@ -106,9 +106,9 @@ class SyntheticDataModule(BaseDataModule):
 
     def get_constants(self):
         constants = {
-            'n_boxes': n_boxes,
-            'n_cameras': n_cameras,
-            'n_classes': n_classes,
+            'n_boxes': self.n_boxes,
+            'n_cameras': self.n_cameras,
+            'n_classes': self.n_classes,
         }
 
         return constants

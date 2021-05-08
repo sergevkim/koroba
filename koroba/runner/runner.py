@@ -14,11 +14,21 @@ class Runner:
             max_epoch: int = 200,
             optimizer_name: str = 'adam',
             verbose: bool = False,
+            giou_coef: float = 0.5,
+            nll_coef: float = 0.5,
+            l1_coef: float = 0.0,
+            no_object_coef: float = 0.4,
         ):
         self.device = device
         self.max_epoch = max_epoch
         self.optimizer_name = optimizer_name
         self.verbose = verbose
+        self.box_matching_criterion = BoxMatchingLoss(
+            giou_coef=giou_coef,
+            nll_coef=nll_coef,
+            l1_coef=l1_coef,
+        )
+        self.no_object_coef = no_object_coef
 
     def run_epoch(
             self,
@@ -51,7 +61,8 @@ class Runner:
             repeated_seen_labels = repeated['seen_labels']
 
             if mode == '3d':
-                match_boxes_loss, rows = BoxMatchingLoss.calculate_3d(
+                box_matching_loss, rows = \
+                        self.box_matching_criterion.calculate_3d(
                     n_boxes=len(optimized_boxes),
                     n_seen_boxes=len(seen_boxes),
                     repeated_boxes=repeated_boxes,
@@ -60,7 +71,8 @@ class Runner:
                     repeated_seen_labels=repeated_seen_labels,
                 )
             else:
-                match_boxes_loss, rows = BoxMatchingLoss.calculate_2d(
+                box_matching_loss, rows = \
+                        self.box_matching_criterion.calculate_2d(
                     n_boxes=len(optimized_boxes),
                     n_seen_boxes=len(seen_boxes),
                     repeated_boxes=repeated_boxes,
@@ -89,8 +101,8 @@ class Runner:
             )
             n_matched = len(rows)
             loss = (
-                torch.sum(match_boxes_loss) +
-                torch.sum(no_object_nll) * no_object_weight
+                torch.sum(box_matching_loss) +
+                torch.sum(no_object_nll) * self.no_object_coef
             )
             loss = loss / max(n_matched + n_no_object, 1)
             i_loss += loss
@@ -108,7 +120,7 @@ class Runner:
         true = datamodule.get_true()
         seen = datamodule.get_seen()
         optimized = datamodule.get_optimized()
-        constants - datamodule.get_constants()
+        constants = datamodule.get_constants()
         optimized_boxes = optimized['boxes']
         optimized_scores = optimized['scores']
 

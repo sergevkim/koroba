@@ -98,7 +98,7 @@ def optimize_boxes(
             repeated_seen_labels = repeated['seen_labels']
 
             if mode == '3d':
-                match_boxes_loss, rows = BoxMatchingLoss.calculate_3d(
+                box_matching_loss, rows = BoxMatchingLoss.calculate_3d(
                     n_boxes=len(optimized_boxes),
                     n_seen_boxes=len(seen_boxes),
                     repeated_boxes=repeated_boxes,
@@ -107,7 +107,7 @@ def optimize_boxes(
                     repeated_seen_labels=repeated_seen_labels,
                 )
             else:
-                match_boxes_loss, rows = BoxMatchingLoss.calculate_2d(
+                box_matching_loss, rows = BoxMatchingLoss.calculate_2d(
                     n_boxes=len(optimized_boxes),
                     n_seen_boxes=len(seen_boxes),
                     repeated_boxes=repeated_boxes,
@@ -136,7 +136,7 @@ def optimize_boxes(
             )
             n_matched = len(rows)
             loss = (
-                torch.sum(match_boxes_loss) +
+                torch.sum(box_matching_loss) +
                 torch.sum(no_object_nll) * no_object_weight
             )
             loss = loss / max(n_matched + n_no_object, 1)

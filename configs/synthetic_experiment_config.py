@@ -41,6 +41,10 @@ class SpecificArguments:
     n_boxes: int = 10
     n_cameras: int = 10
     n_classes: int = 10
+    giou_coef: float = 0.5
+    nll_coef: float = 0.5
+    l1_coef: float = 0.0
+    no_object_coef: float = 0.4
 
 
 print(CommonArguments.device)
