@@ -103,3 +103,12 @@ class SyntheticDataModule(BaseDataModule):
             'boxes': optimized_boxes,
             'scores': optimized_scores,
         }
+
+    def get_constants(self):
+        constants = {
+            'n_boxes': n_boxes,
+            'n_cameras': n_cameras,
+            'n_classes': n_classes,
+        }
+
+        return constants

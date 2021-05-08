@@ -1,8 +1,10 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 from koroba.datamodules import BaseDataModule
 from koroba.losses import BoxMatchingLoss
+from koroba.utils import Camera
 
 
 class Runner:
@@ -23,9 +25,10 @@ class Runner:
             seen,
             optimized_boxes,
             optimized_scores,
+            constants,
             optimizer,
             epoch_idx: int,
-            mode,
+            mode: str,
         ):
         i_loss = torch.tensor(.0, dtype=torch.float, device=self.device)
 
@@ -81,7 +84,7 @@ class Runner:
                     int(n_no_object),
                     dtype=torch.long,
                     device=optimized_scores.device,
-                ) * n_classes,
+                ) * constants['n_classes'],
                 reduction='none',
             )
             n_matched = len(rows)
@@ -100,11 +103,12 @@ class Runner:
     def run(
             self,
             datamodule: BaseDataModule,
-            mode,
+            mode: str,
         ):
         true = datamodule.get_true()
         seen = datamodule.get_seen()
         optimized = datamodule.get_optimized()
+        constants - datamodule.get_constants()
         optimized_boxes = optimized['boxes']
         optimized_scores = optimized['scores']
 
@@ -119,8 +123,10 @@ class Runner:
                 seen=seen,
                 optimized_boxes=optimized_boxes,
                 optimized_scores=optimized_scores,
+                constants=constants,
                 optimizer=optimizer,
                 epoch_idx=epoch_idx,
+                mode=mode,
             )
 
         optimized_boxes = optimized_boxes.detach().cpu().numpy()

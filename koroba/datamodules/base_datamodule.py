@@ -18,3 +18,7 @@ class BaseDataModule(ABC):
     def get_optimized(self):
         return self.optimized
 
+    @abstractmethod
+    def get_constants(self):
+        pass
+
