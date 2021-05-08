@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 
+import koroba.utils.io as io
 from koroba.datamodules import SyntheticDataModule
 from koroba.runner import Runner
 from koroba.utils import Randomizer
@@ -47,6 +48,14 @@ def main(args):
         datamodule=datamodule,
         mode=args.mode,
     )
+
+    optimized_boxes = optimized_result['boxes']
+
+    for i, box in enumerate(optimized_boxes):
+        io.write_bounding_box(
+            filename=f'output/optimized_box_{i}.pcd',
+            box=box,
+        )
 
 
 if __name__ == '__main__':

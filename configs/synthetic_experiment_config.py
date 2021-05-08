@@ -38,8 +38,8 @@ class RunArguments:
 
 @dataclass
 class SpecificArguments:
-    n_boxes: int = 10
-    n_cameras: int = 10
+    n_boxes: int = 8
+    n_cameras: int = 20
     n_classes: int = 10
     giou_coef: float = 0.5
     nll_coef: float = 0.5
