@@ -110,7 +110,7 @@ class Runner:
         i_loss = i_loss / len(seen['boxes'])
         i_loss.backward()
         optimizer.step()
-        print(f'i: {i};  loss: {i_loss.detach().cpu().numpy()}')
+        print(f'epoch_idx: {epoch_idx};  loss: {i_loss.detach().cpu().numpy()}')
 
     def run(
             self,
@@ -143,12 +143,13 @@ class Runner:
 
         optimized_boxes = optimized_boxes.detach().cpu().numpy()
         optimized_boxes[:, 3:-1] = np.exp(optimized_boxes[:, 3:-1])
-        optimized_scores = torch.softmax(scores, dim=1).detach().cpu().numpy()
+        optimized_scores = \
+            torch.softmax(optimized_scores, dim=1).detach().cpu().numpy()
 
         optimized_result = {
             'boxes': optimized_boxes,
-            'labels': np.argmax(scores, axis=1),
-            'scores': np.max(scores, axis=1)
+            'labels': np.argmax(optimized_scores, axis=1),
+            'scores': np.max(optimized_scores, axis=1)
         }
 
         return optimized_result

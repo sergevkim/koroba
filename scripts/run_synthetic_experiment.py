@@ -39,7 +39,7 @@ def main(args):
         optimizer_name=args.optimizer_name,
         verbose=args.verbose,
         giou_coef=args.giou_coef,
-        nll_coef=args.nll_coef
+        nll_coef=args.nll_coef,
         l1_coef=args.l1_coef,
         no_object_coef=args.no_object_coef,
     )
