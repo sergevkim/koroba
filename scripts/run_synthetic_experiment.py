@@ -41,6 +41,7 @@ def main(args):
     )
     optimized_result = runner.run(
         datamodule=datamodule,
+        mode=args.mode,
     )
 
 

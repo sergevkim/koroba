@@ -1,10 +1,13 @@
+import numpy as np
 import torch
 
 from koroba.datamodules import BaseDataModule
+from koroba.losses import BoxMatchingLoss
 
 
 class Runner:
     def __init__(
+            self,
             device: torch.device = torch.device('cpu'),
             max_epoch: int = 200,
             optimizer_name: str = 'adam',
@@ -22,6 +25,7 @@ class Runner:
             optimized_scores,
             optimizer,
             epoch_idx: int,
+            mode,
         ):
         i_loss = torch.tensor(.0, dtype=torch.float, device=self.device)
 
@@ -95,8 +99,8 @@ class Runner:
 
     def run(
             self,
-            n_boxes: int,
             datamodule: BaseDataModule,
+            mode,
         ):
         true = datamodule.get_true()
         seen = datamodule.get_seen()

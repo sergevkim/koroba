@@ -56,21 +56,9 @@ class SyntheticDataModule(BaseDataModule):
         )
         self.seen['cameras'] = cameras
         SynData.update_box_dataset_with_cameras(
-            seen=seen,
+            seen=self.seen,
             proj=False,
         )
-
-        for i in range(len(seen['boxes'])):
-            self.seen['boxes'][i] = torch.tensor(
-                self.seen['boxes'][i],
-                dtype=torch.float,
-                device=self.device,
-            )
-            self.seen['labels'][i] = torch.tensor(
-                self.seen['labels'][i],
-                dtype=torch.long,
-                device=self.device,
-            )
 
 
         initial_boxes = \
@@ -98,6 +86,18 @@ class SyntheticDataModule(BaseDataModule):
             torch.tensor(initial_scores, dtype=torch.float, device=self.device)
         optimized_scores = initial_scores.clone().detach()
         optimized_scores.requires_grad = True
+
+        for i in range(len(self.seen['boxes'])):
+            self.seen['boxes'][i] = torch.tensor(
+                self.seen['boxes'][i],
+                dtype=torch.float,
+                device=self.device,
+            )
+            self.seen['labels'][i] = torch.tensor(
+                self.seen['labels'][i],
+                dtype=torch.long,
+                device=self.device,
+            )
 
         self.optimized = {
             'boxes': optimized_boxes,

@@ -31,6 +31,7 @@ class DataArguments:
 class RunArguments:
     learning_rate: float = 0.01
     max_epoch: int = 200
+    mode: str = '3d'
     one_batch_overfit: int = 1
     optimizer_name: str = 'adam'
 
