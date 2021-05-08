@@ -12,11 +12,12 @@ def write_bounding_box(
         box: Union[np.ndarray, Tensor],
     ) -> None:
     assert len(box) == 7 or len(box) == 8
-    if type(box) is Tensor:
-        box = box.detach().cpu().numpy()
 
     if len(box) == 7:
         box = Box.seven2eight(box)
+
+    if type(box) is Tensor:
+        box = box.detach().cpu().numpy()
 
     box_point_cloud = o3d.geometry.PointCloud()
     box_point_cloud.points = o3d.utility.Vector3dVector(box)

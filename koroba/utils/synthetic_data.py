@@ -100,11 +100,11 @@ class SyntheticData:
             angle_threshold,
         ):
         to_concat = (
-            np.random.normal(0.5, center_std, (n_boxes, 3)),
-            np.abs(np.random.normal(size_mean, size_std, (n_boxes, 3))),
-            np.random.uniform(0.0, 2 * np.pi, (n_boxes, 1))
+            torch.tensor(np.random.normal(0.5, 0.2, (10, 3)), dtype=torch.float),
+            torch.tensor(np.abs(np.random.normal(0.05, 0.02, (10, 3))), dtype=torch.float),
+            torch.tensor(np.random.uniform(0.0, 2 * np.pi, (10, 1)), dtype=torch.float),
         )
-        boxes = np.concatenate(to_concat, axis=1)
+        boxes = torch.cat(to_concat, axis=1)
         true = {
             'boxes': boxes,
             'labels': np.random.choice(np.arange(n_classes), n_boxes)
