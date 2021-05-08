@@ -9,15 +9,16 @@ from koroba.utils import SyntheticData as SynData
 class SyntheticDataModule(BaseDataModule):
     def __init__(
             batch_size: int = 1,
+            device: torch.device = torch.device('cpu'),
             n_boxes: int = 10,
             n_classes: int = 10,
         ):
         self.batch_size = batch_size
+        self.device = device
         self.n_boxes = n_boxes
         self.n_classes = n_classes
 
     def setup(
-            center_std: float
             angle_threshold: float = 0.3,
             center_std: float = 0.2,
             center_threshold: float = 0.02,
@@ -31,14 +32,14 @@ class SyntheticDataModule(BaseDataModule):
             n=n,
             n_boxes=self.n_boxes,
             n_classes=self.n_classes,
-            center_std=0.2,
-            size_mean=0.05,
-            size_std=0.02,
-            class_probability=0.1,
-            drop_probability=0.2,
-            center_threshold=0.02,
-            size_threshold=0.3,
-            angle_threshold=0.3,
+            center_std=center_std,
+            size_mean=size_mean,
+            size_std=size_std,
+            class_probability=class_probability,
+            drop_probability=drop_probability,
+            center_threshold=center_threshold,
+            size_threshold=size_threshold,
+            angle_threshold=angle_threshold,
         )
         for i, box in enumerate(self.true['boxes']):
             io.write_bounding_box(
@@ -55,9 +56,21 @@ class SyntheticDataModule(BaseDataModule):
             proj=False,
         )
 
+        for i in range(len(seen['boxes'])):
+            self.seen['boxes'][i] = torch.tensor(
+                self.seen['boxes'][i],
+                dtype=torch.float,
+                device=self.device,
+            )
+            self.seen['labels'][i] = torch.tensor(
+                self.seen['labels'][i],
+                dtype=torch.long,
+                device=self.device,
+            )
+
 
         initial_boxes = \
-            np.concatenate(tuple(filter(lambda x: len(x), seen['boxes'])))
+            np.concatenate(tuple(filter(lambda x: len(x), self.seen['boxes'])))
         center_mean = np.mean(initial_boxes[:, :3], axis=0)
         center_std = np.std(initial_boxes[:, :3], axis=0)
         size_mean = np.mean(initial_boxes[:, 3:-1], axis=0)
@@ -69,16 +82,16 @@ class SyntheticDataModule(BaseDataModule):
             np.random.uniform(0.0, 2 * np.pi, (self.n_boxes, 1)),
         )
         initial_boxes = np.concatenate(to_concat, axis=1)
-        initial_boxes[:, 3: -1] = np.log(initial_boxes[:, 3: -1])
+        initial_boxes[:, 3:-1] = np.log(initial_boxes[:, 3:-1])
         initial_boxes = \
-            torch.tensor(initial_boxes, dtype=torch.float, device=device)
+            torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
         optimized_boxes = initial_boxes.clone().detach()
         optimized_boxes.requires_grad = True
 
         initial_scores = np.random.random((self.n_boxes, self.n_classes + 1))
         initial_scores[:, -1] = 0.0
         initial_scores = \
-            torch.tensor(initial_scores, dtype=torch.float, device=device)
+            torch.tensor(initial_scores, dtype=torch.float, device=self.device)
         optimized_scores = initial_scores.clone().detach()
         optimized_scores.requires_grad = True
 

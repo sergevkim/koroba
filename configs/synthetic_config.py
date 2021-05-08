@@ -37,7 +37,8 @@ class RunArguments:
 
 @dataclass
 class SpecificArguments:
-    specific: bool = False
+    n_boxes: int = 10
+    n_classes: int = 10
 
 
 print(CommonArguments.device)

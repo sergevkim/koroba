@@ -8,7 +8,7 @@ from koroba.utils import Box
 
 class Camera:
     @staticmethod
-    def check_boxes_in_camera_fov(
+    def check_boxes_in_camera_fov( #TODO projection on 8 points
             boxes: Tensor,
             camera: np.ndarray,
         ):

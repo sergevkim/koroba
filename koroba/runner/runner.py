@@ -1,5 +1,4 @@
 import torch
-from torch.optim import Optimizer
 
 from koroba.datamodules import BaseDataModule
 
@@ -8,9 +7,12 @@ class Runner:
     def __init__(
             device: torch.device = torch.device('cpu'),
             max_epoch: int = 200,
+            optimizer_name: str = 'adam',
             verbose: bool = False,
         ):
         self.device = device
+        self.max_epoch = max_epoch
+        self.optimizer_name = optimizer_name
         self.verbose = verbose
 
     def run_epoch(
@@ -23,10 +25,10 @@ class Runner:
         ):
         i_loss = torch.tensor(.0, dtype=torch.float, device=self.device)
 
-        for j in range(len(seen['boxes'])):
+        for j, seen_boxes in enumerate(seen['boxes']):
             optimizer.zero_grad()
 
-            seen_boxes = seen['boxes'][j]
+            #seen_boxes = seen['boxes'][j]
             seen_labels = seen['labels'][j]
             camera = seen['cameras'][j]
 
@@ -95,50 +97,20 @@ class Runner:
             self,
             n_boxes: int,
             datamodule: BaseDataModule,
-            optimizer_name: Optimizer,
         ):
-        initial_boxes = \
-            np.concatenate(tuple(filter(lambda x: len(x), seen['boxes'])))
-        center_mean = np.mean(initial_boxes[:, :3], axis=0)
-        center_std = np.std(initial_boxes[:, :3], axis=0)
-        size_mean = np.mean(initial_boxes[:, 3:-1], axis=0)
-        size_std = np.std(initial_boxes[:, 3:-1], axis=0)
+        true = datamodule.get_true()
+        seen = datamodule.get_seen()
+        optimized = datamodule.get_optimized()
+        optimized_boxes = optimized['boxes']
+        optimized_scores = optimized['scores']
 
-        to_concat = (
-            np.random.normal(center_mean, center_std, (n_boxes, 3)),
-            np.abs(np.random.normal(size_mean, size_std, (n_boxes, 3))),
-            np.random.uniform(.0, 2 * np.pi, (n_boxes, 1)),
-        )
-        initial_boxes = np.concatenate(to_concat, axis=1)
-        initial_boxes[:, 3: -1] = np.log(initial_boxes[:, 3: -1])
-        initial_boxes = \
-            torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
-        optimized_boxes = initial_boxes.clone().detach()
-        optimized_boxes.requires_grad = True
-
-        initial_scores = np.random.random((n_boxes, n_classes + 1))
-        initial_scores[:, -1] = .0
-        initial_scores = \
-            torch.tensor(initial_scores, dtype=torch.float, device=self.device)
-        scores = initial_scores.clone().detach()
-        scores.requires_grad = True
-
-        for i in range(len(seen['boxes'])):
-            seen['boxes'][i] = torch.tensor(
-                seen['boxes'][i],
-                dtype=torch.float,
-                device=self.device,
-            )
-            seen['labels'][i] = torch.tensor(
-                seen['labels'][i],
-                dtype=torch.long,
-                device=self.device,
+        if self.optimizer_name == 'adam':
+            optimizer = torch.optim.Adam(
+                params=[optimized_boxes, optimized_scores],
+                lr=0.01,
             )
 
-        if optimizer_name == 'adam':
-            optimizer = torch.optim.Adam([optimized_boxes, scores], lr=0.01)
-
-        for epoch_idx in range(args.max_epoch):
+        for epoch_idx in range(self.max_epoch):
             self.run_epoch(
                 seen=seen,
                 optimized_boxes=optimized_boxes,
@@ -148,12 +120,13 @@ class Runner:
             )
 
         optimized_boxes = optimized_boxes.detach().cpu().numpy()
-        optimized_boxes[:, 3: -1] = np.exp(optimized_boxes[:, 3: -1])
-        scores = torch.softmax(scores, dim=1).detach().cpu().numpy()
-        optimized = {
+        optimized_boxes[:, 3:-1] = np.exp(optimized_boxes[:, 3:-1])
+        optimized_scores = torch.softmax(scores, dim=1).detach().cpu().numpy()
+
+        optimized_result = {
             'boxes': optimized_boxes,
             'labels': np.argmax(scores, axis=1),
             'scores': np.max(scores, axis=1)
         }
 
-        return optimized
+        return optimized_result
