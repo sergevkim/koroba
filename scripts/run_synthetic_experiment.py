@@ -2,7 +2,7 @@ from koroba.datamodules import SyntheticDataModule
 from koroba.runner import Runner
 from koroba.utils import Randomizer
 
-from configs.run_synthetic_config import (
+from configs.synthetic_experiment_config import (
     CommonArguments,
     DataArguments,
     RunArhuments,
