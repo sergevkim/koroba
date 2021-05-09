@@ -45,21 +45,12 @@ class SyntheticDataModule(BaseDataModule):
             size_threshold=size_threshold,
             angle_threshold=angle_threshold,
         )
+
         for i, box in enumerate(self.true['boxes']):
             io.write_bounding_box(
                 filename=f'output/true_box_{i}.pcd',
                 box=box,
             )
-        cameras = SynData.generate_camera_dataset(
-            n=self.n_cameras,
-            angle_threshold=0.3,
-        )
-        self.seen['cameras'] = cameras
-        SynData.update_box_dataset_with_cameras(
-            seen=self.seen,
-            proj=False,
-        )
-
 
         for i in range(len(self.seen['boxes'])):
             self.seen['boxes'][i] = torch.tensor(
@@ -72,6 +63,18 @@ class SyntheticDataModule(BaseDataModule):
                 dtype=torch.long,
                 device=self.device,
             )
+
+        cameras = SynData.generate_camera_dataset(
+            n=self.n_cameras,
+            angle_threshold=0.3,
+            device=device,
+        )
+
+        self.seen['cameras'] = cameras
+        SynData.update_box_dataset_with_cameras(
+            seen=self.seen,
+            proj=False,
+        )
 
         initial_boxes = \
             torch.cat(tuple(filter(lambda x: len(x), self.seen['boxes'])))

@@ -50,7 +50,10 @@ class SyntheticData:
         return layout, layouts
 
     @staticmethod
-    def generate_camera(angle_threshold: float):
+    def generate_camera(
+            angle_threshold: float,
+            device: torch.device,
+        ):
         point = np.random.uniform(0.0, 1.0, 3)
         forward_vector = np.array([0.5, 0.5, 0.5]) - point
         forward_vector = Rotation.from_rotvec(
@@ -61,12 +64,17 @@ class SyntheticData:
         camera_pose[:3, :3] = rotation_matrix
         camera_pose[:3, 3] = point
 
-        extrinsic = torch.tensor(np.linalg.inv(camera_pose), dtype=torch.float)
-        intrinsic = torch.tensor([
+        extrinsic = torch.tensor(
+            np.linalg.inv(camera_pose),
+            dtype=torch.float,
+            device=device,
+        )
+        intrinsic_matrix = [
             [0.5, 0.0, 0.5, 0.0],
             [0.0, 0.5, 0.5, 0.0],
             [0.0, 0.0, 1.0, 0.0],
-        ])
+        ]
+        intrinsic = torch.tensor(intrinsic_matrix, device=device)
         camera = intrinsic @ extrinsic
 
         return camera
@@ -76,11 +84,15 @@ class SyntheticData:
             cls,
             n: int,
             angle_threshold: float,
+            device: torch.device,
         ):
         cameras = list()
 
         for _ in range(n):
-            camera = cls.generate_camera(angle_threshold=angle_threshold)
+            camera = cls.generate_camera(
+                angle_threshold=angle_threshold,
+                device=device,
+            )
             cameras.append(camera)
 
         return torch.stack(cameras, dim=0)

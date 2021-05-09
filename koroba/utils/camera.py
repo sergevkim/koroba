@@ -15,7 +15,7 @@ class Camera:
         center_3d = boxes[:, :3].T
         to_concat = (
             center_3d,
-            torch.ones(size=(1, len(boxes))),
+            torch.ones(size=(1, len(boxes)), device=boxes.device),
         )
         center_3d = torch.cat(to_concat, axis=0)
         x, y, z = camera @ center_3d
