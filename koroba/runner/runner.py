@@ -86,10 +86,15 @@ class Runner:
                 boxes=optimized_boxes.detach(), #TODO remove detach
                 camera=camera,
             )
-            no_object_index = np.ones(len(optimized_boxes), dtype=np.bool)
+            no_object_index = torch.ones(
+                len(optimized_boxes),
+                dtype=np.bool,
+                device=visible_index.device,
+            )
             no_object_index[rows] = False
-            no_object_index = np.logical_and(visible_index, no_object_index)
-            n_no_object = np.sum(no_object_index)
+            no_object_index = visible_index * no_object_index
+            n_no_object = torch.sum(no_object_index)
+
             no_object_nll = F.cross_entropy(
                 optimized_scores[no_object_index],
                 torch.ones(
@@ -141,7 +146,7 @@ class Runner:
                 mode=mode,
             )
 
-        optimized_boxes = optimized_boxes.detach().cpu().numpy()
+        optimized_boxes = optimized_boxes.detach().cpu()
         optimized_boxes[:, 3:-1] = np.exp(optimized_boxes[:, 3:-1])
         optimized_scores = \
             torch.softmax(optimized_scores, dim=1).detach().cpu().numpy()

@@ -145,7 +145,7 @@ class SyntheticData:
                 np.random.choice(np.arange(n_classes), n_boxes),
                 true['labels'],
             )
-            scores = np.ones(n_boxes)
+            scores = torch.ones(n_boxes)
             drop_mask = np.random.random(n_boxes) < drop_probability
             seen['boxes'].append(boxes_set[~drop_mask])
             seen['labels'].append(labels[~drop_mask])

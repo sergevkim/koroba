@@ -67,7 +67,7 @@ class SyntheticDataModule(BaseDataModule):
         cameras = SynData.generate_camera_dataset(
             n=self.n_cameras,
             angle_threshold=0.3,
-            device=device,
+            device=self.device,
         )
 
         self.seen['cameras'] = cameras
@@ -84,8 +84,22 @@ class SyntheticDataModule(BaseDataModule):
         size_std = initial_boxes[:, 3:-1].std(axis=0)
 
         to_concat = (
-            torch.normal(center_mean, center_std, (self.n_boxes, 3)),
-            torch.abs(torch.normal(size_mean, size_std, (self.n_boxes, 3))),
+            torch.tensor(
+                np.random.normal(
+                    center_mean.cpu().numpy(),
+                    center_std.cpu().numpy(),
+                    (self.n_boxes, 3),
+                ),
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                np.abs(np.random.normal(
+                    size_mean.cpu().numpy(),
+                    size_std.cpu().numpy(),
+                    (self.n_boxes, 3),
+                )),
+                dtype=torch.float,
+            ),
             torch.tensor(
                 np.random.uniform(0.0, 2 * np.pi, (self.n_boxes, 1)),
                 dtype=torch.float,
