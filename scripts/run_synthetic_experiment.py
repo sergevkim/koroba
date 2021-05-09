@@ -38,11 +38,12 @@ def main(args):
         device=args.device,
         max_epoch=args.max_epoch,
         optimizer_name=args.optimizer_name,
-        verbose=args.verbose,
+        box_matching_mode=args.box_matching_mode,
         giou_coef=args.giou_coef,
         nll_coef=args.nll_coef,
         l1_coef=args.l1_coef,
         no_object_coef=args.no_object_coef,
+        verbose=args.verbose,
     )
     optimized_result = runner.run(
         datamodule=datamodule,

@@ -60,7 +60,7 @@ class Box:
         far_right_y_delta = np.abs(y_right - y_far)
         far_left_x_delta = np.abs(x_left - x_far)
         far_left_y_delta = np.abs(y_left - y_far)
-        angle = np.arctan(far_right_x_delta / far_right_y_delta)
+        angle = np.arctan2(far_right_x_delta / far_right_y_delta)
         y_size = np.sqrt(far_right_x_delta ** 2 + far_right_y_delta ** 2)
         x_size = np.sqrt(far_left_x_delta ** 2 + far_left_y_delta ** 2)
         z_size = z_high - z_low
@@ -73,7 +73,7 @@ class Box:
 
     @staticmethod
     def vertices2d_to_box2d(vertices: Tensor):
-        angle = torch.tensor([0])
+        angle = torch.tensor([0], device=vertices.device)
         center = vertices.mean(axis=0)
         extent = torch.abs(vertices[1] - vertices[0]) / 2
         box = torch.cat((center, extent, angle), dim=0)

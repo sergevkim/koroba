@@ -13,17 +13,19 @@ class Runner:
             device: torch.device = torch.device('cpu'),
             max_epoch: int = 200,
             optimizer_name: str = 'adam',
-            verbose: bool = False,
+            box_matching_mode: str = 'minmax',
             giou_coef: float = 0.5,
             nll_coef: float = 0.5,
             l1_coef: float = 0.0,
             no_object_coef: float = 0.4,
+            verbose: bool = False,
         ):
         self.device = device
         self.max_epoch = max_epoch
         self.optimizer_name = optimizer_name
         self.verbose = verbose
         self.box_matching_criterion = BoxMatchingLoss(
+            mode=box_matching_mode,
             giou_coef=giou_coef,
             nll_coef=nll_coef,
             l1_coef=l1_coef,

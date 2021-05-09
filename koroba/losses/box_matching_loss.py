@@ -13,10 +13,12 @@ except:
 class BoxMatchingLoss:
     def __init__(
             self,
+            mode: str = 'minmax',
             giou_coef: float = 0.5,
             nll_coef: float = 0.5,
             l1_coef: float = 0.0,
         ):
+        self.mode = mode
         self.giou_coef = giou_coef
         self.nll_coef = nll_coef
         self.l1_coef = l1_coef
@@ -100,12 +102,12 @@ class BoxMatchingLoss:
         boxes_projections = Camera.project_boxes_onto_camera_plane(
             boxes=repeated_boxes,
             camera=camera,
-            mode='minmax',
+            mode=self.mode,
         )
         seen_boxes_projections = Camera.project_boxes_onto_camera_plane(
             boxes=repeated_seen_boxes,
             camera=camera,
-            mode='minmax',
+            mode=self.mode,
         )
 
         pairwise_giou, _ = calculate_2d_giou(
