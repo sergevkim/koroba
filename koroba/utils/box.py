@@ -4,7 +4,6 @@ from typing import Union
 import numpy as np
 import open3d as o3d
 import torch
-from scipy.spatial.transform import Rotation
 from torch import Tensor
 
 
@@ -20,17 +19,17 @@ class Box:
     on the all point cloud.
     '''
     @staticmethod
-    def seven2eight(box: Union[np.ndarray, Tensor]):
+    def seven2eight(box: Tensor):
         # TODO vectorize
         center = box[:3]
         sizes = box[3:6]
         alpha = box[6]
-        rotation_matrix = [
-            [np.cos(alpha), -np.sin(alpha), 0],
-            [np.sin(alpha), np.cos(alpha), 0],
+
+        rotation_matrix = torch.tensor([
+            [torch.cos(alpha), -torch.sin(alpha), 0],
+            [torch.sin(alpha), torch.cos(alpha), 0],
             [0, 0, 1],
-        ]
-        rotation = Rotation.from_matrix(rotation_matrix)
+        ]).to(box.device)
 
         vertices = list()
 
@@ -39,17 +38,14 @@ class Box:
                 for k in range(2):
                     mask = ((-1) ** i, (-1) ** j, (-1) ** k)
                     if type(box) is Tensor:
-                        mask = torch.tensor(mask)
-                    vertex = center + rotation.apply(sizes * mask / 2)
+                        mask = torch.tensor(mask).to(box.device)
+                    vertex = center + rotation_matrix @ (sizes * mask / 2)
                     vertices.append(vertex)
 
-        if type(box) is Tensor:
-            return torch.stack(vertices, dim=0)
-        else:
-            return np.array(vertices)
+        return torch.stack(vertices, dim=0)
 
     @staticmethod
-    def eight2seven(vertices: Union[np.ndarray, Tensor]):
+    def eight2seven(vertices: Tensor):
         center = vertices.sum(axis=0)
         # right upper left lower in xy plane
         right_index, far_index, high_index = vertices.argmax(axis=0)
@@ -69,14 +65,9 @@ class Box:
         x_size = np.sqrt(far_left_x_delta ** 2 + far_left_y_delta ** 2)
         z_size = z_high - z_low
 
-        if type(vertices) is Tensor:
-            extent = torch.tensor([x_size, y_size, z_size])
-            angle = torch.tensor([angle])
-            box = torch.cat((center, extent, angle), dim=0)
-        else:
-            extent = np.array([x_size, y_size, z_size])
-            angle = np.array([angle])
-            box = np.concatenate((center, extent, angle), axis=0)
+        extent = torch.tensor([x_size, y_size, z_size])
+        angle = torch.tensor([angle])
+        box = torch.cat((center, extent, angle), dim=0)
 
         return box
 

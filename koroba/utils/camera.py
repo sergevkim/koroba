@@ -8,45 +8,45 @@ from koroba.utils import Box
 
 class Camera:
     @staticmethod
-    def check_boxes_in_camera_fov(
+    def check_boxes_in_camera_fov( #TODO projection on 8 points
             boxes: Tensor,
-            camera: np.ndarray,
+            camera: Tensor,
         ):
         center_3d = boxes[:, :3].T
         to_concat = (
             center_3d,
-            np.ones(shape=(1, len(boxes))),
+            torch.ones(size=(1, len(boxes)), device=boxes.device),
         )
-        center_3d = np.concatenate(to_concat, axis=0)
+        center_3d = torch.cat(to_concat, axis=0)
         x, y, z = camera @ center_3d
         x /= z
         y /= z
-        check = np.logical_and.reduce((
-            z >= .0,
-            x >= .0,
-            x <= 1.,
-            y >= .0,
-            y <= 1.
-        ))
+        check = (
+            (z >= 0.0) *
+            (x >= 0.0) *
+            (x <= 1.0) *
+            (y >= 0.0) *
+            (y <= 1.0)
+        )
 
         return check
 
     @staticmethod
     def project_single_box_onto_camera_plane(
             box: Tensor,
-            camera: np.ndarray,
+            camera: Tensor,
         ) -> Tensor:
         assert box.shape == (7, )
         vertices = Box.seven2eight(box)
         assert vertices.shape == (8, 3)
         to_concat = (
             vertices.T,
-            np.ones(shape=(1, len(vertices))),
+            torch.ones(size=(1, len(vertices))),
         )
-        vertices = np.concatenate(to_concat, axis=0)
+        vertices = torch.cat(to_concat, axis=0)
         x, y, z = camera @ vertices
-        x = torch.tensor(x / z)
-        y = torch.tensor(y / z)
+        x = x / z
+        y = y / z
 
         return x, y
 

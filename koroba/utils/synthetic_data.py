@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
+import torch
 from scipy.spatial.transform import Rotation
 
 from koroba.utils import Camera
@@ -49,7 +50,10 @@ class SyntheticData:
         return layout, layouts
 
     @staticmethod
-    def generate_camera(angle_threshold: float):
+    def generate_camera(
+            angle_threshold: float,
+            device: torch.device,
+        ):
         point = np.random.uniform(0.0, 1.0, 3)
         forward_vector = np.array([0.5, 0.5, 0.5]) - point
         forward_vector = Rotation.from_rotvec(
@@ -60,12 +64,17 @@ class SyntheticData:
         camera_pose[:3, :3] = rotation_matrix
         camera_pose[:3, 3] = point
 
-        extrinsic = np.linalg.inv(camera_pose)
-        intrinsic = np.array([
+        extrinsic = torch.tensor(
+            np.linalg.inv(camera_pose),
+            dtype=torch.float,
+            device=device,
+        )
+        intrinsic_matrix = [
             [0.5, 0.0, 0.5, 0.0],
             [0.0, 0.5, 0.5, 0.0],
             [0.0, 0.0, 1.0, 0.0],
-        ])
+        ]
+        intrinsic = torch.tensor(intrinsic_matrix, device=device)
         camera = intrinsic @ extrinsic
 
         return camera
@@ -75,14 +84,18 @@ class SyntheticData:
             cls,
             n: int,
             angle_threshold: float,
+            device: torch.device,
         ):
         cameras = list()
 
         for _ in range(n):
-            camera = cls.generate_camera(angle_threshold=angle_threshold)
+            camera = cls.generate_camera(
+                angle_threshold=angle_threshold,
+                device=device,
+            )
             cameras.append(camera)
 
-        return np.array(cameras)
+        return torch.stack(cameras, dim=0)
 
     @staticmethod
     def generate_box_dataset(
@@ -99,11 +112,20 @@ class SyntheticData:
             angle_threshold,
         ):
         to_concat = (
-            np.random.normal(0.5, center_std, (n_boxes, 3)),
-            np.abs(np.random.normal(size_mean, size_std, (n_boxes, 3))),
-            np.random.uniform(0.0, 2 * np.pi, (n_boxes, 1))
+            torch.tensor(
+                np.random.normal(0.5, center_std, (n_boxes, 3)),
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                np.abs(np.random.normal(size_mean, size_std, (n_boxes, 3))),
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                np.random.uniform(0.0, 2 * np.pi, (n_boxes, 1)),
+                dtype=torch.float,
+            ),
         )
-        boxes = np.concatenate(to_concat, axis=1)
+        boxes = torch.cat(to_concat, axis=1)
         true = {
             'boxes': boxes,
             'labels': np.random.choice(np.arange(n_classes), n_boxes)
@@ -123,7 +145,7 @@ class SyntheticData:
                 np.random.choice(np.arange(n_classes), n_boxes),
                 true['labels'],
             )
-            scores = np.ones(n_boxes)
+            scores = torch.ones(n_boxes)
             drop_mask = np.random.random(n_boxes) < drop_probability
             seen['boxes'].append(boxes_set[~drop_mask])
             seen['labels'].append(labels[~drop_mask])
