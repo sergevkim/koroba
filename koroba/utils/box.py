@@ -19,7 +19,7 @@ class Box:
     on the all point cloud.
     '''
     @staticmethod
-    def seven2eight(box: Tensor):
+    def box3d_to_vertices3d(box: Tensor):
         # TODO vectorize
         center = box[:3]
         sizes = box[3:6]
@@ -45,7 +45,7 @@ class Box:
         return torch.stack(vertices, dim=0)
 
     @staticmethod
-    def eight2seven(vertices: Tensor):
+    def vertices3d_to_box3d(vertices: Tensor):
         center = vertices.sum(axis=0)
         # right upper left lower in xy plane
         right_index, far_index, high_index = vertices.argmax(axis=0)
@@ -72,6 +72,15 @@ class Box:
         return box
 
     @staticmethod
+    def vertices2d_to_box2d(vertices: Tensor):
+        angle = torch.tensor([0])
+        center = vertices.mean(axis=0)
+        extent = torch.abs(vertices[1] - vertices[0]) / 2
+        box = torch.cat((center, extent, angle), dim=0)
+
+        return box
+
+    @staticmethod
     def estimate_horizontal_bounding_box(points: np.ndarray):
         n = len(points)
         points_lower = copy.deepcopy(points)
@@ -93,6 +102,6 @@ class Box:
 
 if __name__ == '__main__':
     box = np.array([0, 0, 0, 1, 2, 3, np.pi / 6])
-    eight = Box.seven2eight(box)
+    eight = Box.box3d_to_vertices3d(box)
     print(f'eight:\n{eight}\n')
     print(eight.shape)

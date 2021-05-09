@@ -14,7 +14,7 @@ Randomizer.set_seed()
 
 
 def test_box_in_camera_fov_checking():
-    camera = SynData.generate_camera(angle_threshold=0.3)
+    camera = SynData.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
     assert camera.shape == (3, 4)
 
     to_concat = (
@@ -31,7 +31,7 @@ def test_box_in_camera_fov_checking():
 
 
 def test_single_box_projection():
-    camera = SynData.generate_camera(angle_threshold=0.3)
+    camera = SynData.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
     assert camera.shape == (3, 4)
 
     to_concat = (
@@ -52,7 +52,7 @@ def test_single_box_projection():
 
 
 def test_boxes_projection():
-    camera = SynData.generate_camera(angle_threshold=0.3)
+    camera = SynData.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
     assert camera.shape == (3, 4)
 
     to_concat = (
@@ -67,7 +67,7 @@ def test_boxes_projection():
         camera=camera,
         mode='minmax',
     )
-    assert boxes_projections.shape == (10, 2, 2)
+    assert boxes_projections.shape == (10, 5)
     assert type(boxes_projections) is Tensor
 
     boxes_projections = Camera.project_boxes_onto_camera_plane(
@@ -75,7 +75,7 @@ def test_boxes_projection():
         camera=camera,
         mode='attention',
     )
-    assert boxes_projections.shape == (10, 2, 2)
+    assert boxes_projections.shape == (10, 5)
     assert type(boxes_projections) is Tensor
 
 

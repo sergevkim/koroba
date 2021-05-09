@@ -14,7 +14,7 @@ def write_bounding_box(
     assert len(box) == 7 or len(box) == 8
 
     if len(box) == 7:
-        box = Box.seven2eight(box)
+        box = Box.box3d_to_vertices3d(box)
 
     if type(box) is Tensor:
         box = box.detach().cpu().numpy()
