@@ -17,7 +17,7 @@ class CommonArguments:
 @dataclass
 class DataArguments:
     batch_size: int = 1
-    scan_path: Path('./data/scans/scene0000_00')
+    scan_path: Path = Path('./data/scans/scene0000_00')
 
 
 @dataclass

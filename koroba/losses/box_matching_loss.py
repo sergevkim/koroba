@@ -32,8 +32,9 @@ class BoxMatchingLoss:
         ):
         n_boxes = len(boxes)
         n_seen_boxes = len(seen_boxes)
+
         if not n_seen_boxes:
-            return torch.tensor(0.0, dtype=torch.float, device=boxes.device), []
+            return None
 
         to_concat = [
             boxes[:, :3],

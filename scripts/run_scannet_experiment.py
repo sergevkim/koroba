@@ -16,6 +16,8 @@ from configs.scannet_experiment_config import (
 def main(args):
     Randomizer.set_seed(seed=args.seed)
 
+    print('!',args.scan_path)
+    print('!',type(args.scan_path))
     datamodule = ScanNetDataModule(
         batch_size=args.batch_size,
         scan_path=args.scan_path,

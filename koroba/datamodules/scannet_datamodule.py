@@ -1,7 +1,9 @@
+import json
 from collections import defaultdict
 from pathlib import Path
 
 import cv2
+import numpy as np
 import torch
 
 from koroba.datamodules import BaseDataModule
@@ -10,6 +12,7 @@ from koroba.utils import Box
 
 class ScanNetDataModule(BaseDataModule):
     def __init__(
+            self,
             scan_path: Path('./data/scans/scene0000_00'),
             device: torch.device = torch.device('cpu'),
         ):
@@ -82,18 +85,24 @@ class ScanNetDataModule(BaseDataModule):
     def prepare_seen(self):
         seen = defaultdict(list)
 
-        instance_path = self.scan_path / 'instance-filt'
         aggregation_info_path = \
             self.scan_path / f'{self.scan_path.name}.aggregation.json'
-        frame_paths = [p for p in instance_path.glob('*')]
+        instance_path = self.scan_path / 'instance-filt'
+        frame_paths = [p for p in instance_path.glob('*.png')]
+        camera_path = self.scan_path / 'sens_info/pose'
+        camera_paths = [p for p in camera_path.glob('*.txt')]
+
+        assert len(camera_paths) == len(frame_paths)
 
         with open(aggregation_info_path) as json_file:
             aggregation_info = json.load(json_file)
             self.n_boxes = len(aggregation_info['segGroups'])
 
+        self.n_cameras = len(camera_paths)
+
         for i, frame_path in enumerate(frame_paths):
-            frame_info = self.prepare_frame_info(frame_path)
-            camera = self.prepare_camera() #TODO
+            frame_info = self.prepare_frame_info(frame_path=frame_path)
+            camera = np.loadtxt(camera_paths[i])
             seen['boxes'].append(info['boxes_set'])
             seen['labels'].append(info['labels'])
             seen['scores'].append(info['scores'])
@@ -152,3 +161,12 @@ class ScanNetDataModule(BaseDataModule):
             'boxes': optimized_boxes,
             'scores': optimized_scores,
         }
+
+    def get_constants(self):
+        constants = {
+            'n_boxes': self.n_boxes,
+            'n_cameras': self.n_cameras,
+            'n_classes': self.n_boxes,
+        }
+
+        return constants

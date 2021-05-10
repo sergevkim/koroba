@@ -57,6 +57,15 @@ class Runner:
                 boxes=optimized_boxes,
                 scores=optimized_scores,
             )
+
+            if repeated is None:
+                box_matching_loss = torch.tensor(
+                    0.0,
+                    dtype=torch.float,
+                    device=optimzied_boxes.device,
+                )
+                rows = []
+
             repeated_boxes = repeated['boxes']
             repeated_scores = repeated['scores']
             repeated_seen_boxes = repeated['seen_boxes']
