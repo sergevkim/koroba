@@ -1,36 +1,109 @@
+from collections import defaultdict
 from pathlib import Path
 
+import cv2
 import torch
 
 from koroba.datamodules import BaseDataModule
+from koroba.utils import Box
 
 
-class ScannetDataModule(BaseDataModule):
+class ScanNetDataModule(BaseDataModule):
     def __init__(
-            scan_path: Path('./data/scans/scene0000_00/instance-filt/999.png'),
+            scan_path: Path('./data/scans/scene0000_00'),
             device: torch.device = torch.device('cpu'),
         ):
         self.scan_path = scan_path
         self.device = device
 
-    def get_bounding_boxes_from_instances(
+    def handle_one_object_on_frame(
             self,
-            frame: np.ndarray,
+            frame_path: Path,
+            object_idx: int,
         ):
-        return
+        frame = cv2.imread(frame_path)
+        mask = frame == object_idx
+        mask = mask[:,:,0]
+        mask = np.pad(
+            mask,
+            pad_width=(1, 1),
+            mode='constant',
+            constant_values=(0, 0),
+        )
 
-    def a(
+        if mask.sum() == 0:
+            return None
+
+        #bounding box
+        mask_x1 = (mask.argmax(axis=0) != 0)[::-1]
+        x_max = len(mask_x1) - mask_x1.argmax() - 1 - 1
+        x_min = (mask.argmax(axis=0) != 0).argmax() - 1
+
+        mask_y1 = (mask.argmax(axis=1) != 0)[::-1]
+        y_max = len(mask_y1) - mask_y1.argmax() - 1 - 1
+        y_min = (mask.argmax(axis=1) != 0).argmax() - 1
+
+        vertices = torch.tensor(
+            ((x_min, y_min), (x_max, y_max)),
+            dtype=torch.float,
+            device=torch.device,
+        )
+        box = Box.vertices2d_to_box2d(vertices=vertices)
+
+        return box
+
+    def prepare_frame_info(
             self,
+            frame_path: Path,
         ):
-        for frame in frames:
-            self.get_bounding_boxes_from_instances(frame=frame)
+        boxes_set = list()
+        labels = list()
 
-        return result
+        for object_idx in range(1, self.n_boxes + 1):
+            box = self.handle_one_object_on_frame(
+                frame_path=frame_path,
+                object_idx=object_idx,
+            )
+
+            if box is not None:
+                boxes_set.append(box)
+                labels.append(object_idx)
+
+        scores = torch.ones(len(boxes_set))
+
+        info = {
+            'boxes_set': boxes_set,
+            'labels': labels,
+            'scores': scores,
+        }
+
+        return info
+
+    def prepare_seen(self):
+        seen = defaultdict(list)
+
+        instance_path = self.scan_path / 'instance-filt'
+        aggregation_info_path = \
+            self.scan_path / f'{self.scan_path.name}.aggregation.json'
+        frame_paths = [p for p in instance_path.glob('*')]
+
+        with open(aggregation_info_path) as json_file:
+            aggregation_info = json.load(json_file)
+            self.n_boxes = len(aggregation_info['segGroups'])
+
+        for i, frame_path in enumerate(frame_paths):
+            frame_info = self.prepare_frame_info(frame_path)
+            camera = self.prepare_camera() #TODO
+            seen['boxes'].append(info['boxes_set'])
+            seen['labels'].append(info['labels'])
+            seen['scores'].append(info['scores'])
+            seen['camera'].append(camera)
+
+        return seen
 
     def setup(self):
         self.true = None
-        frames = None
-        self.seen = self.get_boxes2d():
+        self.seen = self.prepare_seen()
 
         initial_boxes = \
             torch.cat(tuple(filter(lambda x: len(x), self.seen['boxes'])))
