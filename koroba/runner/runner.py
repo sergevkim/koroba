@@ -62,36 +62,36 @@ class Runner:
                 box_matching_loss = torch.tensor(
                     0.0,
                     dtype=torch.float,
-                    device=optimzied_boxes.device,
+                    device=optimized_boxes.device,
                 )
                 rows = []
-
-            repeated_boxes = repeated['boxes']
-            repeated_scores = repeated['scores']
-            repeated_seen_boxes = repeated['seen_boxes']
-            repeated_seen_labels = repeated['seen_labels']
-
-            if mode == '3d':
-                box_matching_loss, rows = \
-                        self.box_matching_criterion.calculate_3d(
-                    n_boxes=len(optimized_boxes),
-                    n_seen_boxes=len(seen_boxes),
-                    repeated_boxes=repeated_boxes,
-                    repeated_scores=repeated_scores,
-                    repeated_seen_boxes=repeated_seen_boxes,
-                    repeated_seen_labels=repeated_seen_labels,
-                )
             else:
-                box_matching_loss, rows = \
-                        self.box_matching_criterion.calculate_2d(
-                    n_boxes=len(optimized_boxes),
-                    n_seen_boxes=len(seen_boxes),
-                    repeated_boxes=repeated_boxes,
-                    repeated_scores=repeated_scores,
-                    repeated_seen_boxes=repeated_seen_boxes,
-                    repeated_seen_labels=repeated_seen_labels,
-                    camera=camera,
-                )
+                repeated_boxes = repeated['boxes']
+                repeated_scores = repeated['scores']
+                repeated_seen_boxes = repeated['seen_boxes']
+                repeated_seen_labels = repeated['seen_labels']
+
+                if mode == '3d':
+                    box_matching_loss, rows = \
+                            self.box_matching_criterion.calculate_3d(
+                        n_boxes=len(optimized_boxes),
+                        n_seen_boxes=len(seen_boxes),
+                        repeated_boxes=repeated_boxes,
+                        repeated_scores=repeated_scores,
+                        repeated_seen_boxes=repeated_seen_boxes,
+                        repeated_seen_labels=repeated_seen_labels,
+                    )
+                else:
+                    box_matching_loss, rows = \
+                            self.box_matching_criterion.calculate_2d(
+                        n_boxes=len(optimized_boxes),
+                        n_seen_boxes=len(seen_boxes),
+                        repeated_boxes=repeated_boxes,
+                        repeated_scores=repeated_scores,
+                        repeated_seen_boxes=repeated_seen_boxes,
+                        repeated_seen_labels=repeated_seen_labels,
+                        camera=camera,
+                    )
 
             visible_index = Camera.check_boxes_in_camera_fov(
                 boxes=optimized_boxes.detach(), #TODO remove detach
