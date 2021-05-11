@@ -67,18 +67,14 @@ class Runner:
                         seen_boxes=seen_boxes,
                         seen_labels=seen_labels,
                     )
-                    repeated_optimized_boxes = repeated['optimized_boxes']
-                    repeated_optimized_scores = repeated['optimized_scores']
-                    repeated_seen_boxes = repeated['seen_boxes']
-                    repeated_seen_labels = repeated['seen_labels']
                     box_matching_loss, rows = \
                             self.box_matching_criterion.calculate_3d(
                         n_boxes=len(optimized_boxes),
                         n_seen_boxes=len(seen_boxes),
-                        repeated_optimized_boxes=repeated_optimized_boxes,
-                        repeated_optimized_scores=repeated_optimized_scores,
-                        repeated_seen_boxes=repeated_seen_boxes,
-                        repeated_seen_labels=repeated_seen_labels,
+                        repeated_optimized_boxes=repeated['optimized_boxes'],
+                        repeated_optimized_scores=repeated['optimized_scores'],
+                        repeated_seen_boxes=repeated['seen_boxes'],
+                        repeated_seen_labels=repeated['seen_labels'],
                     )
                 elif mode == '2d':
                     seen_projections_set = seen['projections_sets'][j]
@@ -95,19 +91,14 @@ class Runner:
                         seen_projections=seen_projections,
                         seen_labels=seen_labels,
                     )
-                    repeated_optimized_projections = \
-                        repeated['optimized_projections']
-                    repeated_optimized_scores = repeated['optimized_scores']
-                    repeated_seen_projections = repeated['seen_projections']
-                    repeated_seen_labels = repeated['seen_labels']
                     box_matching_loss, rows = \
                             self.box_matching_criterion.calculate_2d(
-                        n_boxes=len(optimized_boxes),
-                        n_seen_boxes=len(seen_boxes),
-                        repeated_optimized_projections=repeated_optimized_projections,
-                        repeated_optimized_scores=repeated_optimized_scores,
-                        repeated_seen_projections=repeated_seen_projections,
-                        repeated_seen_labels=repeated_seen_labels,
+                        n_boxes=len(optimized_projections),
+                        n_seen_boxes=len(seen_projections),
+                        repeated_optimized_projections=repeated['optimized_projections'],
+                        repeated_optimized_scores=repeated['optimized_scores'],
+                        repeated_seen_projections=repeated['seen_projections'],
+                        repeated_seen_labels=repeated['seen_labels'],
                         camera=camera,
                     )
 

@@ -108,8 +108,8 @@ class BoxMatchingLoss:
 
     def calculate_2d(
             self,
-            n_boxes: int,
-            n_seen_boxes: int,
+            n_projections: int,
+            n_seen_projections: int,
             repeated_optimized_projections: Tensor,
             repeated_optimized_scores: Tensor,
             repeated_seen_projections: Tensor,
@@ -135,7 +135,7 @@ class BoxMatchingLoss:
             repeated_seen_labels,
             reduction='none',
         )
-        pairwise_nll = pairwise_nll.reshape(n_boxes, n_seen_boxes)
+        pairwise_nll = pairwise_nll.reshape(n_projections, n_seen_projections)
         cost = (
             self.giou_coef * pairwise_giou +
             self.nll_coef * pairwise_nll +

@@ -105,9 +105,18 @@ class ScanNetDataModule(BaseDataModule):
         poses_paths = [p for p in poses_path.glob('*.txt')]
         intrinsic_path = \
             self.scan_path / 'sens_info/intrinsic/intrinsic_color.txt'
+        axis_alignment_path = self.scan_path / 'sens_info/scene0000_00.txt'
 
-        intrinsic_matrix = np.loadtxt(intrinsic_path)[:, :-1]
-        intrinsic = torch.tensor(intrinsic_matrix, device=self.device)
+        with open(axis_alignment_path) as f:
+            axis_alignment = f.readline()
+            print(axis_alignment)
+
+        intrinsic_matrix = np.loadtxt(intrinsic_path)[:-1, :]
+        intrinsic = torch.tensor(
+            intrinsic_matrix,
+            dtype=torch.float,
+            device=self.device,
+        )
 
         assert len(poses_paths) == len(frames_paths)
 
@@ -119,13 +128,17 @@ class ScanNetDataModule(BaseDataModule):
 
         for i in tqdm.tqdm(range(min(len(frames_paths), n_frames))):
             frame_info = self.prepare_frame_info(frame_path=frames_paths[i])
-            pose_matrix = np.loadtxt(poses_paths[i])
-            pose = torch.tensor(pose_matrix, device=self.device)
-            camera = intrinsic @ pose
+            camera_pose_matrix = np.loadtxt(poses_paths[i])
+            extrinsic = torch.tensor(
+                np.linalg.inv(camera_pose_matrix),
+                dtype=torch.float,
+                device=self.device,
+            )
+            camera = intrinsic @ extrinsic
             seen['projections_sets'].append(frame_info['projections_set'])
             seen['labels'].append(frame_info['labels'])
             seen['scores'].append(frame_info['scores'])
-            seen['camera'].append(camera)
+            seen['cameras'].append(camera)
 
         return seen
 
@@ -136,7 +149,6 @@ class ScanNetDataModule(BaseDataModule):
         )
 
         xy_center_mean = initial_boxes[:, :2].mean(axis=0)
-        print(xy_center_mean, xy_center_mean.mean())
         z_center_mean = torch.tensor(
             [xy_center_mean.mean()],
             device=self.device,
