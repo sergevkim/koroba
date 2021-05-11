@@ -72,14 +72,10 @@ class ScanNetDataModule(BaseDataModule):
             )
 
             if projection is not None:
-                projections_set.append(projections)
+                projections_set.append(projection)
                 labels.append(object_idx)
 
-        projections_set = torch.tensor(
-            projections_set,
-            dtype=torch.float,
-            device=self.device,
-        )
+        projections_set = torch.stack(projections_set, dim=0)
         labels = torch.tensor(
             labels,
             dtype=torch.float,
@@ -105,20 +101,27 @@ class ScanNetDataModule(BaseDataModule):
             self.scan_path / f'{self.scan_path.name}.aggregation.json'
         instance_path = self.scan_path / 'instance-filt'
         frame_paths = [p for p in instance_path.glob('*.png')]
-        camera_path = self.scan_path / 'sens_info/pose'
-        camera_paths = [p for p in camera_path.glob('*.txt')]
+        poses_path = self.scan_path / 'sens_info/pose'
+        poses_paths = [p for p in poses_path.glob('*.txt')]
+        intrinsic_path = \
+            self.scan_path / 'sens_info/intrinsic/intrinsic_color.txt'
 
-        assert len(camera_paths) == len(frame_paths)
+        intrinsic_matrix = np.loadtxt(intrinsic_path)[:, :-1]
+        intrinsic = torch.tensor(intrinsic_matrix, device=self.device)
+
+        assert len(poses_paths) == len(frame_paths)
 
         with open(aggregation_info_path) as json_file:
             aggregation_info = json.load(json_file)
             self.n_boxes = len(aggregation_info['segGroups'])
 
-        self.n_cameras = len(camera_paths)
+        self.n_cameras = len(poses_paths)
 
         for i in tqdm.tqdm(range(min(len(frame_paths), n_frames))):
             frame_info = self.prepare_frame_info(frame_path=frame_paths[i])
-            camera = np.loadtxt(camera_paths[i])
+            pose_matrix = np.loadtxt(camera_paths[i])
+            pose = torch.tensor(pose_matrix, device=self.device)
+            camera = intrinsic @ pose
             seen['projections_sets'].append(frame_info['projections_set'])
             seen['labels'].append(frame_info['labels'])
             seen['scores'].append(frame_info['scores'])
@@ -133,12 +136,39 @@ class ScanNetDataModule(BaseDataModule):
         self.true = None
         self.seen = self.prepare_seen(n_frames=n_frames)
 
-        initial_boxes = \
-            torch.cat(tuple(filter(lambda x: len(x), self.seen['boxes'])))
-        center_mean = initial_boxes[:, :3].mean(axis=0)
-        center_std = initial_boxes[:, :3].std(axis=0)
-        size_mean = initial_boxes[:, 3:-1].mean(axis=0)
-        size_std = initial_boxes[:, 3:-1].std(axis=0)
+        initial_boxes = torch.cat(
+            tuple(filter(lambda x: len(x), self.seen['projections_sets'])),
+            dim=0,
+        )
+
+        xy_center_mean = initial_boxes[:, :2].mean(axis=0)
+        print(xy_center_mean, xy_center_mean.mean())
+        z_center_mean = torch.tensor(
+            [xy_center_mean.mean()],
+            device=self.device,
+        )
+        center_mean = torch.cat((xy_center_mean, z_center_mean), dim=0)
+
+        xy_center_std = initial_boxes[:, :2].std(axis=0)
+        z_center_std = torch.tensor(
+            [xy_center_std.mean()],
+            device=self.device,
+        )
+        center_std = torch.cat((xy_center_std, z_center_std), dim=0)
+
+        xy_size_mean = initial_boxes[:, 2:-1].mean(axis=0)
+        z_size_mean = torch.tensor(
+            [xy_size_mean.mean()],
+            device=self.device,
+        )
+        size_mean = torch.cat((xy_size_mean, z_size_mean), dim=0)
+
+        xy_size_std = initial_boxes[:, 2:-1].std(axis=0)
+        z_size_std = torch.tensor(
+            [xy_size_std.mean()],
+            device=self.device,
+        )
+        size_std = torch.cat((xy_size_std, z_size_std), dim=0)
 
         to_concat = (
             torch.tensor(
@@ -163,13 +193,12 @@ class ScanNetDataModule(BaseDataModule):
             ),
         )
         initial_boxes = torch.cat(to_concat, axis=1)
-        #initial_boxes[:, 3:-1] = torch.log(initial_boxes[:, 3:-1])
         initial_boxes = \
             torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
         optimized_boxes = initial_boxes.clone().detach()
         optimized_boxes.requires_grad = True
 
-        initial_scores = np.random.random((self.n_boxes, self.n_classes + 1))
+        initial_scores = np.random.random((self.n_boxes, self.n_boxes + 1))
         initial_scores[:, -1] = 0.0
         initial_scores = \
             torch.tensor(initial_scores, dtype=torch.float, device=self.device)
