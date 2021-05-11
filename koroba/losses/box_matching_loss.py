@@ -59,23 +59,23 @@ class BoxMatchingLoss:
             self,
             n_boxes: int,
             n_seen_boxes: int,
-            repeated_boxes: Tensor,
-            repeated_scores: Tensor,
+            repeated_optimized_boxes: Tensor,
+            repeated_optimized_scores: Tensor,
             repeated_seen_boxes: Tensor,
             repeated_seen_labels: Tensor,
         ):
         pairwise_giou, _ = calculate_3d_giou(
-            box3d1=repeated_boxes[None, ...],
+            box3d1=repeated_optimized_boxes[None, ...],
             box3d2=repeated_seen_boxes[None, ...],
         )
         pairwise_giou = pairwise_giou.reshape(n_boxes, n_seen_boxes)
         pairwise_l1 = torch.mean(
-            torch.abs(repeated_boxes[:, :3] - repeated_seen_boxes[:, :3]),
+            torch.abs(repeated_optimized_boxes[:, :3] - repeated_seen_boxes[:, :3]),
             dim=1,
         )
         pairwise_l1 = pairwise_l1.reshape(n_boxes, n_seen_boxes)
         pairwise_nll = F.cross_entropy(
-            repeated_scores,
+            repeated_optimized_scores,
             repeated_seen_labels,
             reduction='none',
         )
@@ -93,15 +93,15 @@ class BoxMatchingLoss:
             self,
             n_boxes: int,
             n_seen_boxes: int,
-            boxes_projections: Tensor,
-            repeated_scores: Tensor,
-            seen_boxes_projections: Tensor,
+            repeated_optimized_projections: Tensor,
+            repeated_optimized_scores: Tensor,
+            repeated_seen_projections: Tensor,
             repeated_seen_labels: Tensor,
             camera: Tensor,
         ):
         pairwise_giou, _ = calculate_2d_giou(
-            box1=boxes_projections[None, ...],
-            box2=seen_boxes_projections[None, ...],
+            box1=repeated_optimized_projections[None, ...],
+            box2=repeated_seen_projections[None, ...],
         )
         pairwise_giou = pairwise_giou.reshape(n_boxes, n_seen_boxes)
         '''
@@ -114,7 +114,7 @@ class BoxMatchingLoss:
         '''
         pairwise_l1 = 0
         pairwise_nll = F.cross_entropy(
-            repeated_scores,
+            repeated_optimized_scores,
             repeated_seen_labels,
             reduction='none',
         )

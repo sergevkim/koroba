@@ -51,14 +51,7 @@ class Runner:
             seen_labels = seen['labels'][j]
             camera = seen['cameras'][j]
 
-            repeated = BoxMatchingLoss.prepare_repeated(
-                seen_boxes=seen_boxes,
-                seen_labels=seen_labels,
-                boxes=optimized_boxes,
-                scores=optimized_scores,
-            )
-
-            if repeated is None:
+            if len(seen_boxes) is None:
                 box_matching_loss = torch.tensor(
                     0.0,
                     dtype=torch.float,
@@ -66,40 +59,54 @@ class Runner:
                 )
                 rows = []
             else:
-                repeated_boxes = repeated['boxes']
-                boxes_projections = Camera.project_boxes_onto_camera_plane(
-                    boxes=repeated_boxes,
-                    camera=camera,
-                    mode=self.projection_mode,
-                )
-
-                repeated_scores = repeated['scores']
-                repeated_seen_boxes = repeated['seen_boxes']
-                seen_boxes_projections = Camera.project_boxes_onto_camera_plane(
-                    boxes=repeated_seen_boxes,
-                    camera=camera,
-                    mode=self.projection_mode,
-                )
-                repeated_seen_labels = repeated['seen_labels']
-
                 if mode == '3d':
+                    repeated = BoxMatchingLoss.prepare_repeated(
+                        seen_boxes=seen_boxes,
+                        seen_labels=seen_labels,
+                        optimized_boxes=optimized_boxes,
+                        scores=optimized_scores,
+                    )
+                    repeated_optimized_boxes = repeated['boxes']
+                    repeated_optimized_scores = repeated['scores']
+                    repeated_seen_boxes = repeated['seen_boxes']
+                    repeated_seen_labels = repeated['seen_labels']
                     box_matching_loss, rows = \
                             self.box_matching_criterion.calculate_3d(
                         n_boxes=len(optimized_boxes),
                         n_seen_boxes=len(seen_boxes),
-                        repeated_boxes=repeated_boxes,
-                        repeated_scores=repeated_scores,
+                        repeated_optimized_boxes=repeated_optimized_boxes,
+                        repeated_optimized_scores=repeated_optimized_scores,
                         repeated_seen_boxes=repeated_seen_boxes,
                         repeated_seen_labels=repeated_seen_labels,
                     )
                 else:
+                    optimized_projections = Camera.project_boxes_onto_camera_plane(
+                        boxes=optimized_boxes,
+                        camera=camera,
+                        mode=self.projection_mode,
+                    )
+                    seen_projections = Camera.project_boxes_onto_camera_plane(
+                        boxes=seen_boxes,
+                        camera=camera,
+                        mode=self.projection_mode,
+                    )
+                    repeated = BoxMatchingLoss.prepare_repeated(
+                        seen_boxes=seen_projections,
+                        seen_labels=seen_labels,
+                        boxes=optimized_projections,
+                        scores=optimized_scores,
+                    )
+                    repeated_optimized_projections = repeated['boxes']
+                    repeated_optimized_scores = repeated['scores']
+                    repeated_seen_projections = repeated['seen_boxes']
+                    repeated_seen_labels = repeated['seen_labels']
                     box_matching_loss, rows = \
                             self.box_matching_criterion.calculate_2d(
                         n_boxes=len(optimized_boxes),
                         n_seen_boxes=len(seen_boxes),
-                        boxes_projections=boxes_projections,
-                        repeated_scores=repeated_scores,
-                        seen_boxes_projections=seen_boxes_projections,
+                        repeated_optimized_projections=repeated_optimized_projections,
+                        repeated_optimized_scores=repeated_optimized_scores,
+                        repeated_seen_projections=repeated_seen_projections,
                         repeated_seen_labels=repeated_seen_labels,
                         camera=camera,
                     )
