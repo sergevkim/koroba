@@ -78,7 +78,7 @@ class ScanNetDataModule(BaseDataModule):
         projections_set = torch.stack(projections_set, dim=0)
         labels = torch.tensor(
             labels,
-            dtype=torch.float,
+            dtype=torch.long,
             device=self.device,
         )
         scores = torch.ones(len(projections_set))
@@ -105,7 +105,7 @@ class ScanNetDataModule(BaseDataModule):
         poses_paths = [p for p in poses_path.glob('*.txt')]
         intrinsic_path = \
             self.scan_path / 'sens_info/intrinsic/intrinsic_color.txt'
-        axis_alignment_path = self.scan_path / 'sens_info/scene0000_00.txt'
+        axis_alignment_path = self.scan_path / 'scene0000_00.txt'
 
         with open(axis_alignment_path) as f:
             axis_alignment = f.readline()

@@ -120,7 +120,7 @@ class BoxMatchingLoss:
             box1=repeated_optimized_projections[None, ...],
             box2=repeated_seen_projections[None, ...],
         )
-        pairwise_giou = pairwise_giou.reshape(n_boxes, n_seen_boxes)
+        pairwise_giou = pairwise_giou.reshape(n_projections, n_seen_projections)
         '''
         TODO projections
         pairwise_l1 = torch.mean(

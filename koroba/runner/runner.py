@@ -93,8 +93,8 @@ class Runner:
                     )
                     box_matching_loss, rows = \
                             self.box_matching_criterion.calculate_2d(
-                        n_boxes=len(optimized_projections),
-                        n_seen_boxes=len(seen_projections),
+                        n_projections=len(optimized_projections),
+                        n_seen_projections=len(seen_projections),
                         repeated_optimized_projections=repeated['optimized_projections'],
                         repeated_optimized_scores=repeated['optimized_scores'],
                         repeated_seen_projections=repeated['seen_projections'],
@@ -132,7 +132,7 @@ class Runner:
             loss = loss / max(n_matched + n_no_object, 1)
             i_loss += loss
 
-        i_loss = i_loss / len(seen['boxes'])
+        i_loss /= i_loss / len(seen['labels'])
         i_loss.backward()
         optimizer.step()
         print(f'epoch_idx: {epoch_idx};  loss: {i_loss.detach().cpu().numpy()}')
