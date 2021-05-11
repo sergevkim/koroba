@@ -69,6 +69,11 @@ class Runner:
                 repeated_boxes = repeated['boxes']
                 repeated_scores = repeated['scores']
                 repeated_seen_boxes = repeated['seen_boxes']
+                seen_boxes_projections = Camera.project_boxes_onto_camera_plane(
+                    boxes=repeated_seen_boxes,
+                    camera=camera,
+                    mode=self.mode,
+                )
                 repeated_seen_labels = repeated['seen_labels']
 
                 if mode == '3d':
@@ -78,7 +83,7 @@ class Runner:
                         n_seen_boxes=len(seen_boxes),
                         repeated_boxes=repeated_boxes,
                         repeated_scores=repeated_scores,
-                        repeated_seen_boxes=repeated_seen_boxes,
+                        seen_boxes_projections=seen_boxes_projections,
                         repeated_seen_labels=repeated_seen_labels,
                     )
                 else:

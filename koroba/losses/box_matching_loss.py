@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
+from torch import Tensor
 
 from koroba.utils import Camera
 
@@ -60,10 +61,10 @@ class BoxMatchingLoss:
             self,
             n_boxes: int,
             n_seen_boxes: int,
-            repeated_boxes,
-            repeated_scores,
-            repeated_seen_boxes,
-            repeated_seen_labels,
+            repeated_boxes: Tensor,
+            repeated_scores: Tensor,
+            repeated_seen_boxes: Tensor,
+            repeated_seen_labels: Tensor,
         ):
         pairwise_giou, _ = calculate_3d_giou(
             box3d1=repeated_boxes[None, ...],
@@ -94,19 +95,14 @@ class BoxMatchingLoss:
             self,
             n_boxes: int,
             n_seen_boxes: int,
-            repeated_boxes,
-            repeated_scores,
-            repeated_seen_boxes,
-            repeated_seen_labels,
-            camera,
+            repeated_boxes: Tensor,
+            repeated_scores: Tensor,
+            seen_boxes_projections: Tensor,
+            repeated_seen_labels: Tensor,
+            camera: Tensor,
         ):
         boxes_projections = Camera.project_boxes_onto_camera_plane(
             boxes=repeated_boxes,
-            camera=camera,
-            mode=self.mode,
-        )
-        seen_boxes_projections = Camera.project_boxes_onto_camera_plane(
-            boxes=repeated_seen_boxes,
             camera=camera,
             mode=self.mode,
         )
