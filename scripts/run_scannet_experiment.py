@@ -21,7 +21,7 @@ def main(args):
         scan_path=args.scan_path,
         device=args.device,
     )
-    datamodule.setup()
+    datamodule.setup(n_frames=args.n_frames)
 
     runner = Runner(
         device=args.device,

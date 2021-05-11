@@ -85,7 +85,10 @@ class ScanNetDataModule(BaseDataModule):
 
         return info
 
-    def prepare_seen(self):
+    def prepare_seen(
+            self,
+            n_frames: int,
+        ):
         seen = defaultdict(list)
 
         aggregation_info_path = \
@@ -103,8 +106,8 @@ class ScanNetDataModule(BaseDataModule):
 
         self.n_cameras = len(camera_paths)
 
-        for i, frame_path in tqdm.tqdm(enumerate(frame_paths)):
-            frame_info = self.prepare_frame_info(frame_path=frame_path)
+        for i in tqdm.tqdm(range(min(len(frame_paths), n_frames))):
+            frame_info = self.prepare_frame_info(frame_path=frame_paths[i])
             camera = np.loadtxt(camera_paths[i])
             seen['boxes'].append(frame_info['boxes_set'])
             seen['labels'].append(frame_info['labels'])
@@ -113,9 +116,12 @@ class ScanNetDataModule(BaseDataModule):
 
         return seen
 
-    def setup(self):
+    def setup(
+            self,
+            n_frames: int = 100,
+        ):
         self.true = None
-        self.seen = self.prepare_seen()
+        self.seen = self.prepare_seen(n_frames=n_frames)
 
         initial_boxes = \
             torch.cat(tuple(filter(lambda x: len(x), self.seen['boxes'])))

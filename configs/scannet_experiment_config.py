@@ -18,6 +18,7 @@ class CommonArguments:
 class DataArguments:
     batch_size: int = 1
     scan_path: Path = Path('./data/scans/scene0000_00')
+    n_frames: int = 20
 
 
 @dataclass
