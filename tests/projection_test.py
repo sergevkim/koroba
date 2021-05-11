@@ -2,10 +2,10 @@ import numpy as np
 import torch
 from torch import Tensor
 
+from koroba.datamodules import SyntheticDataModule
 from koroba.utils import (
     Box,
     Camera,
-    SyntheticData as SynData,
     Randomizer,
 )
 
@@ -14,7 +14,7 @@ Randomizer.set_seed()
 
 
 def test_box_in_camera_fov_checking():
-    camera = SynData.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
+    camera = SyntheticDataModule.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
     assert camera.shape == (3, 4)
 
     to_concat = (
@@ -31,7 +31,7 @@ def test_box_in_camera_fov_checking():
 
 
 def test_single_box_projection():
-    camera = SynData.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
+    camera = SyntheticDataModule.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
     assert camera.shape == (3, 4)
 
     to_concat = (
@@ -52,7 +52,7 @@ def test_single_box_projection():
 
 
 def test_boxes_projection():
-    camera = SynData.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
+    camera = SyntheticDataModule.generate_camera(angle_threshold=0.3, device=torch.device('cpu'))
     assert camera.shape == (3, 4)
 
     to_concat = (

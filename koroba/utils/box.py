@@ -60,7 +60,7 @@ class Box:
         far_right_y_delta = np.abs(y_right - y_far)
         far_left_x_delta = np.abs(x_left - x_far)
         far_left_y_delta = np.abs(y_left - y_far)
-        angle = np.arctan2(far_right_x_delta / far_right_y_delta)
+        angle = np.arctan(far_right_x_delta / far_right_y_delta) #TODO atan2
         y_size = np.sqrt(far_right_x_delta ** 2 + far_right_y_delta ** 2)
         x_size = np.sqrt(far_left_x_delta ** 2 + far_left_y_delta ** 2)
         z_size = z_high - z_low

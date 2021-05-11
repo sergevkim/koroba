@@ -24,8 +24,8 @@ class SyntheticDataModule(BaseDataModule):
         self.n_cameras = n_cameras
         self.n_classes = n_classes
 
+    @staticmethod
     def augment(
-            self,
             x,
             m_threshold=None,
             a_threshold=None,
@@ -41,8 +41,8 @@ class SyntheticDataModule(BaseDataModule):
 
         return x
 
+    @staticmethod
     def create_rotation_matrix(
-            self,
             forward_vector,
         ):
         v1 = forward_vector / np.linalg.norm(forward_vector)
@@ -53,8 +53,9 @@ class SyntheticDataModule(BaseDataModule):
         #three axes; v1 is collinear to the forward vect
         return np.stack((v2, v3, v1), axis=1)
 
+    @classmethod
     def generate_box_dataset(
-            self,
+            cls,
             n,
             n_boxes,
             n_classes,
@@ -91,9 +92,9 @@ class SyntheticDataModule(BaseDataModule):
 
         for _ in range(n):
             augmented_boxes = (
-                self.augment(true['boxes'][:, :3], a_threshold=center_threshold),
-                self.augment(true['boxes'][:, 3:-1], m_threshold=size_threshold),
-                self.augment(true['boxes'][:, -1:], a_threshold=angle_threshold),
+                cls.augment(true['boxes'][:, :3], a_threshold=center_threshold),
+                cls.augment(true['boxes'][:, 3:-1], m_threshold=size_threshold),
+                cls.augment(true['boxes'][:, -1:], a_threshold=angle_threshold),
             )
             boxes_set = np.concatenate(augmented_boxes, axis=1)
             labels = np.where(
@@ -109,17 +110,18 @@ class SyntheticDataModule(BaseDataModule):
 
         return true, seen
 
+    @classmethod
     def generate_camera(
-            self,
+            cls,
             angle_threshold: float,
             device: torch.device,
         ):
         point = np.random.uniform(0.0, 1.0, 3)
         forward_vector = np.array([0.5, 0.5, 0.5]) - point
         forward_vector = Rotation.from_rotvec(
-            self.augment(np.zeros(3), a_threshold=angle_threshold),
+            cls.augment(np.zeros(3), a_threshold=angle_threshold),
         ).apply(forward_vector)
-        rotation_matrix = self.create_rotation_matrix(forward_vector)
+        rotation_matrix = cls.create_rotation_matrix(forward_vector)
         camera_pose = np.eye(4)
         camera_pose[:3, :3] = rotation_matrix
         camera_pose[:3, 3] = point
@@ -139,8 +141,9 @@ class SyntheticDataModule(BaseDataModule):
 
         return camera
 
+    @classmethod
     def generate_camera_dataset(
-            self,
+            cls,
             n: int,
             angle_threshold: float,
             device: torch.device,
@@ -148,7 +151,7 @@ class SyntheticDataModule(BaseDataModule):
         cameras = list()
 
         for _ in range(n):
-            camera = self.generate_camera(
+            camera = cls.generate_camera(
                 angle_threshold=angle_threshold,
                 device=device,
             )
@@ -156,8 +159,8 @@ class SyntheticDataModule(BaseDataModule):
 
         return torch.stack(cameras, dim=0)
 
+    @staticmethod
     def update_box_dataset_with_cameras(
-            self,
             seen,
         ):
         for i in range(len(seen['boxes'])):
