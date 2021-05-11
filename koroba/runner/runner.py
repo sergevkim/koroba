@@ -48,7 +48,7 @@ class Runner:
             optimizer.zero_grad()
 
             seen_boxes = seen['boxes'][j]
-            seen_projections_set = seen['projections_set'][j]
+            seen_projections_set = seen['projections_sets'][j]
             seen_labels = seen['labels'][j]
             camera = seen['cameras'][j]
 
@@ -83,11 +83,12 @@ class Runner:
                     )
                 elif mode == '2d':
                     assert len(seen_projections_set) != 0
-                    seen_projections = Camera.project_boxes_onto_camera_plane(
-                        boxes=seen_boxes,
-                        camera=camera,
-                        mode=self.projection_mode,
-                    )
+                    #seen_projections = Camera.project_boxes_onto_camera_plane(
+                    #    boxes=seen_boxes,
+                    #    camera=camera,
+                    #    mode=self.projection_mode,
+                    #)
+                    seen_projections = seen_projections_set
                     optimized_projections = Camera.project_boxes_onto_camera_plane(
                         boxes=optimized_boxes,
                         camera=camera,

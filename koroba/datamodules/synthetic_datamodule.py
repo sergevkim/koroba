@@ -180,7 +180,7 @@ class SyntheticDataModule(BaseDataModule):
                 camera=camera,
                 mode='minmax',
             )
-            seen['projections_set'].append(seen_projections_set)
+            seen['projections_sets'].append(seen_projections_set)
 
     def setup(
             self,

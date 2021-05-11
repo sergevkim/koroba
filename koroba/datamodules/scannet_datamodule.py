@@ -61,24 +61,34 @@ class ScanNetDataModule(BaseDataModule):
             self,
             frame_path: Path,
         ):
-        boxes_set = list()
+        projections_set = list()
         labels = list()
 
         for object_idx in range(1, self.n_boxes + 1):
             frame = cv2.imread(str(frame_path))
-            box = self.handle_one_object_on_frame(
+            projection = self.handle_one_object_on_frame(
                 frame=frame,
                 object_idx=object_idx,
             )
 
-            if box is not None:
-                boxes_set.append(box)
+            if projection is not None:
+                projections_set.append(projections)
                 labels.append(object_idx)
 
-        scores = torch.ones(len(boxes_set))
+        projections_set = torch.tensor(
+            projections_set,
+            dtype=torch.float,
+            device=self.device,
+        )
+        labels = torch.tensor(
+            labels,
+            dtype=torch.float,
+            device=self.device,
+        )
+        scores = torch.ones(len(projections_set))
 
         info = {
-            'boxes_set': boxes_set,
+            'projections_set': projections_set,
             'labels': labels,
             'scores': scores,
         }
@@ -109,7 +119,7 @@ class ScanNetDataModule(BaseDataModule):
         for i in tqdm.tqdm(range(min(len(frame_paths), n_frames))):
             frame_info = self.prepare_frame_info(frame_path=frame_paths[i])
             camera = np.loadtxt(camera_paths[i])
-            seen['boxes'].append(frame_info['boxes_set'])
+            seen['projections_sets'].append(frame_info['projections_set'])
             seen['labels'].append(frame_info['labels'])
             seen['scores'].append(frame_info['scores'])
             seen['camera'].append(camera)
