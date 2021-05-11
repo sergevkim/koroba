@@ -5,6 +5,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+import tqdm
 
 from koroba.datamodules import BaseDataModule
 from koroba.utils import Box
@@ -24,9 +25,9 @@ class ScanNetDataModule(BaseDataModule):
             frame_path: Path,
             object_idx: int,
         ):
-        frame = cv2.imread(frame_path)
+        frame = cv2.imread(str(frame_path))
         mask = frame == object_idx
-        mask = mask[:,:,0]
+        mask = mask[:, :, 0]
         mask = np.pad(
             mask,
             pad_width=(1, 1),
@@ -49,7 +50,7 @@ class ScanNetDataModule(BaseDataModule):
         vertices = torch.tensor(
             ((x_min, y_min), (x_max, y_max)),
             dtype=torch.float,
-            device=torch.device,
+            device=self.device,
         )
         box = Box.vertices2d_to_box2d(vertices=vertices)
 
@@ -100,12 +101,12 @@ class ScanNetDataModule(BaseDataModule):
 
         self.n_cameras = len(camera_paths)
 
-        for i, frame_path in enumerate(frame_paths):
+        for i, frame_path in tqdm.tqdm(enumerate(frame_paths)):
             frame_info = self.prepare_frame_info(frame_path=frame_path)
             camera = np.loadtxt(camera_paths[i])
-            seen['boxes'].append(info['boxes_set'])
-            seen['labels'].append(info['labels'])
-            seen['scores'].append(info['scores'])
+            seen['boxes'].append(frame_info['boxes_set'])
+            seen['labels'].append(frame_info['labels'])
+            seen['scores'].append(frame_info['scores'])
             seen['camera'].append(camera)
 
         return seen
