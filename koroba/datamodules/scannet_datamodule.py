@@ -100,7 +100,7 @@ class ScanNetDataModule(BaseDataModule):
         aggregation_info_path = \
             self.scan_path / f'{self.scan_path.name}.aggregation.json'
         instance_path = self.scan_path / 'instance-filt'
-        frame_paths = [p for p in instance_path.glob('*.png')]
+        frames_paths = [p for p in instance_path.glob('*.png')]
         poses_path = self.scan_path / 'sens_info/pose'
         poses_paths = [p for p in poses_path.glob('*.txt')]
         intrinsic_path = \
@@ -109,7 +109,7 @@ class ScanNetDataModule(BaseDataModule):
         intrinsic_matrix = np.loadtxt(intrinsic_path)[:, :-1]
         intrinsic = torch.tensor(intrinsic_matrix, device=self.device)
 
-        assert len(poses_paths) == len(frame_paths)
+        assert len(poses_paths) == len(frames_paths)
 
         with open(aggregation_info_path) as json_file:
             aggregation_info = json.load(json_file)
@@ -117,9 +117,9 @@ class ScanNetDataModule(BaseDataModule):
 
         self.n_cameras = len(poses_paths)
 
-        for i in tqdm.tqdm(range(min(len(frame_paths), n_frames))):
-            frame_info = self.prepare_frame_info(frame_path=frame_paths[i])
-            pose_matrix = np.loadtxt(camera_paths[i])
+        for i in tqdm.tqdm(range(min(len(frames_paths), n_frames))):
+            frame_info = self.prepare_frame_info(frame_path=frames_paths[i])
+            pose_matrix = np.loadtxt(poses_paths[i])
             pose = torch.tensor(pose_matrix, device=self.device)
             camera = intrinsic @ pose
             seen['projections_sets'].append(frame_info['projections_set'])
@@ -129,13 +129,7 @@ class ScanNetDataModule(BaseDataModule):
 
         return seen
 
-    def setup(
-            self,
-            n_frames: int = 100,
-        ):
-        self.true = None
-        self.seen = self.prepare_seen(n_frames=n_frames)
-
+    def prepare_optimized(self):
         initial_boxes = torch.cat(
             tuple(filter(lambda x: len(x), self.seen['projections_sets'])),
             dim=0,
@@ -205,10 +199,20 @@ class ScanNetDataModule(BaseDataModule):
         optimized_scores = initial_scores.clone().detach()
         optimized_scores.requires_grad = True
 
-        self.optimized = {
+        optimized = {
             'boxes': optimized_boxes,
             'scores': optimized_scores,
         }
+
+        return optimized
+
+    def setup(
+            self,
+            n_frames: int = 100,
+        ):
+        self.true = None
+        self.seen = self.prepare_seen(n_frames=n_frames)
+        self.optimized = self.prepare_optimized()
 
     def get_constants(self):
         constants = {
