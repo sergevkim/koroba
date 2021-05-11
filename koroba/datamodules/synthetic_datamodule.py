@@ -1,9 +1,12 @@
+from collections import defaultdict
+
 import numpy as np
 import torch
+from scipy.spatial.transform import Rotation
 
 import koroba.utils.io as io
 from koroba.datamodules import BaseDataModule
-from koroba.utils import Camera, SyntheticData as SynData
+from koroba.utils import Camera
 
 
 class SyntheticDataModule(BaseDataModule):
@@ -20,6 +23,138 @@ class SyntheticDataModule(BaseDataModule):
         self.n_boxes = n_boxes
         self.n_cameras = n_cameras
         self.n_classes = n_classes
+
+    def augment(
+            self,
+            x,
+            m_threshold=None,
+            a_threshold=None,
+        ):
+        if m_threshold is not None:
+            x = x * np.random.uniform(
+                1.0 - m_threshold,
+                1.0 + m_threshold,
+                x.shape,
+            )
+        if a_threshold is not None:
+            x = x + np.random.uniform(-a_threshold, a_threshold, x.shape)
+
+        return x
+
+    def create_rotation_matrix(
+            self,
+            forward_vector,
+        ):
+        v1 = forward_vector / np.linalg.norm(forward_vector)
+        v2 = np.cross([0.0, 0.0, 1.0], v1)
+        v2 = v2 / np.linalg.norm(v2)
+        v3 = np.cross(v1, v2)
+
+        #three axes; v1 is collinear to the forward vect
+        return np.stack((v2, v3, v1), axis=1)
+
+    def generate_box_dataset(
+            self,
+            n,
+            n_boxes,
+            n_classes,
+            center_std,
+            size_mean,
+            size_std,
+            class_probability,
+            drop_probability,
+            center_threshold,
+            size_threshold,
+            angle_threshold,
+        ):
+        to_concat = (
+            torch.tensor(
+                np.random.normal(0.5, center_std, (n_boxes, 3)),
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                np.abs(np.random.normal(size_mean, size_std, (n_boxes, 3))),
+                dtype=torch.float,
+            ),
+            torch.tensor(
+                np.random.uniform(0.0, 2 * np.pi, (n_boxes, 1)),
+                dtype=torch.float,
+            ),
+        )
+        boxes = torch.cat(to_concat, axis=1)
+        true = {
+            'boxes': boxes,
+            'labels': np.random.choice(np.arange(n_classes), n_boxes)
+        }
+
+        seen = defaultdict(list)
+
+        for _ in range(n):
+            augmented_boxes = (
+                self.augment(true['boxes'][:, :3], a_threshold=center_threshold),
+                self.augment(true['boxes'][:, 3:-1], m_threshold=size_threshold),
+                self.augment(true['boxes'][:, -1:], a_threshold=angle_threshold),
+            )
+            boxes_set = np.concatenate(augmented_boxes, axis=1)
+            labels = np.where(
+                np.random.random(n_boxes) < class_probability,
+                np.random.choice(np.arange(n_classes), n_boxes),
+                true['labels'],
+            )
+            scores = torch.ones(n_boxes)
+            drop_mask = np.random.random(n_boxes) < drop_probability
+            seen['boxes'].append(boxes_set[~drop_mask])
+            seen['labels'].append(labels[~drop_mask])
+            seen['scores'].append(scores[~drop_mask])
+
+        return true, seen
+
+    def generate_camera(
+            self,
+            angle_threshold: float,
+            device: torch.device,
+        ):
+        point = np.random.uniform(0.0, 1.0, 3)
+        forward_vector = np.array([0.5, 0.5, 0.5]) - point
+        forward_vector = Rotation.from_rotvec(
+            self.augment(np.zeros(3), a_threshold=angle_threshold),
+        ).apply(forward_vector)
+        rotation_matrix = self.create_rotation_matrix(forward_vector)
+        camera_pose = np.eye(4)
+        camera_pose[:3, :3] = rotation_matrix
+        camera_pose[:3, 3] = point
+
+        extrinsic = torch.tensor(
+            np.linalg.inv(camera_pose),
+            dtype=torch.float,
+            device=device,
+        )
+        intrinsic_matrix = [
+            [0.5, 0.0, 0.5, 0.0],
+            [0.0, 0.5, 0.5, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+        ]
+        intrinsic = torch.tensor(intrinsic_matrix, device=device)
+        camera = intrinsic @ extrinsic
+
+        return camera
+
+    def generate_camera_dataset(
+            self,
+            n: int,
+            angle_threshold: float,
+            device: torch.device,
+        ):
+        cameras = list()
+
+        for _ in range(n):
+            camera = self.generate_camera(
+                angle_threshold=angle_threshold,
+                device=device,
+            )
+            cameras.append(camera)
+
+        return torch.stack(cameras, dim=0)
 
     def update_box_dataset_with_cameras(
             self,
@@ -55,7 +190,7 @@ class SyntheticDataModule(BaseDataModule):
             size_std: float = 0.02,
             size_threshold: float = 0.1,
         ):
-        self.true, self.seen = SynData.generate_box_dataset(
+        self.true, self.seen = self.generate_box_dataset(
             n=self.n_cameras,
             n_boxes=self.n_boxes,
             n_classes=self.n_classes,
@@ -87,17 +222,14 @@ class SyntheticDataModule(BaseDataModule):
                 device=self.device,
             )
 
-        cameras = SynData.generate_camera_dataset(
+        cameras = self.generate_camera_dataset(
             n=self.n_cameras,
             angle_threshold=0.3,
             device=self.device,
         )
 
         self.seen['cameras'] = cameras
-        self.update_box_dataset_with_cameras(
-            seen=self.seen,
-            proj=False,
-        )
+        self.update_box_dataset_with_cameras(seen=self.seen)
 
         initial_boxes = \
             torch.cat(tuple(filter(lambda x: len(x), self.seen['boxes'])))
