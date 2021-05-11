@@ -16,7 +16,7 @@ class ScanNetDataModule(BaseDataModule):
             self,
             batch_size: int = 1,
             device: torch.device = torch.device('cpu'),
-            scan_path: Path('./data/scans/scene0000_00'),
+            scan_path: Path = Path('./data/scans/scene0000_00'),
         ):
         self.batch_size = batch_size
         self.device = device
