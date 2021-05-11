@@ -32,14 +32,6 @@ class BoxMatchingLoss:
         n_optimized = len(optimized_boxes)
         n_seen = len(seen_boxes)
 
-        #to_concat = [
-        #    boxes[:, :3],
-            #torch.exp(boxes[:, 3:-1]),
-        #    boxes[:, 3:-1],
-        #    boxes[:, -1:],
-        #]
-        #exp_boxes = torch.cat(to_concat, dim=1)
-        #repeated_boxes = exp_boxes.repeat_interleave(n_seen, 0)
         repeated_optimized_boxes = optimized_boxes.repeat_interleave(n_seen, 0)
         repeated_optimized_scores = \
             optimized_scores.repeat_interleave(n_seen, 0)
@@ -77,6 +69,8 @@ class BoxMatchingLoss:
             'seen_projections': repeated_seen_projections,
             'seen_labels': repeated_seen_labels,
         }
+
+        return repeated
 
     def calculate_3d(
             self,

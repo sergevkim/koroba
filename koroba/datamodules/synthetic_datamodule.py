@@ -24,7 +24,6 @@ class SyntheticDataModule(BaseDataModule):
     def update_box_dataset_with_cameras(
             self,
             seen,
-            proj: bool = False,
         ):
         for i in range(len(seen['boxes'])):
             if not len(seen['boxes'][i]):
@@ -36,16 +35,14 @@ class SyntheticDataModule(BaseDataModule):
             for key in ['boxes', 'labels', 'scores']:
                 seen[key][i] = seen[key][i][mask]
 
-        if proj:
-            seen['projections'] = list()
-
-            for i, camera in enumerate(seen['cameras']):
-                boxes_set = seen['boxes'][i]
-                proj = Camera.project_boxes_onto_camera_plane(
-                    camera=camera,
-                    boxes_set=boxes_set,
-                )
-                seen['projections'].append(proj)
+        for i, camera in enumerate(seen['cameras']):
+            seen_boxes_set = seen['boxes'][i]
+            seen_projections_set = Camera.project_boxes_onto_camera_plane(
+                boxes=seen_boxes_set,
+                camera=camera,
+                mode='minmax',
+            )
+            seen['projections_set'].append(seen_projections_set)
 
     def setup(
             self,
@@ -56,7 +53,7 @@ class SyntheticDataModule(BaseDataModule):
             drop_probability: float = 0.2,
             size_mean: float = 0.05,
             size_std: float = 0.02,
-            size_threshold: float = 0.3,
+            size_threshold: float = 0.1,
         ):
         self.true, self.seen = SynData.generate_box_dataset(
             n=self.n_cameras,
@@ -132,7 +129,6 @@ class SyntheticDataModule(BaseDataModule):
             ),
         )
         initial_boxes = torch.cat(to_concat, axis=1)
-        #initial_boxes[:, 3:-1] = torch.log(initial_boxes[:, 3:-1])
         initial_boxes = \
             torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
         optimized_boxes = initial_boxes.clone().detach()

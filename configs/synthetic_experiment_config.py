@@ -24,7 +24,7 @@ class DataArguments:
     drop_probability: float = 0.2
     size_mean: float = 0.05
     size_std: float = 0.02
-    size_threshold: float = 0.3
+    size_threshold: float = 0.1
 
 
 @dataclass

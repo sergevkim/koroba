@@ -44,10 +44,11 @@ class Runner:
         ):
         i_loss = torch.tensor(.0, dtype=torch.float, device=self.device)
 
-        for j, seen_boxes in enumerate(seen['boxes']):
+        for j in range(len(seen['labels'])):
             optimizer.zero_grad()
 
-            #seen_boxes = seen['boxes'][j]
+            seen_boxes = seen['boxes'][j]
+            seen_projections_set = seen['projections_set'][j]
             seen_labels = seen['labels'][j]
             camera = seen['cameras'][j]
 
@@ -60,6 +61,7 @@ class Runner:
                 rows = []
             else:
                 if mode == '3d':
+                    assert len(seen_boxes) != 0
                     repeated = BoxMatchingLoss.prepare_repeated_boxes(
                         optimized_boxes=optimized_boxes,
                         optimized_scores=optimized_scores,
@@ -79,7 +81,8 @@ class Runner:
                         repeated_seen_boxes=repeated_seen_boxes,
                         repeated_seen_labels=repeated_seen_labels,
                     )
-                else:
+                elif mode == '2d':
+                    assert len(seen_projections_set) != 0
                     seen_projections = Camera.project_boxes_onto_camera_plane(
                         boxes=seen_boxes,
                         camera=camera,
@@ -99,7 +102,7 @@ class Runner:
                     repeated_optimized_projections = \
                         repeated['optimized_projections']
                     repeated_optimized_scores = repeated['optimized_scores']
-                    repeated_seen_projections = repeated['seen_boxes']
+                    repeated_seen_projections = repeated['seen_projections']
                     repeated_seen_labels = repeated['seen_labels']
                     box_matching_loss, rows = \
                             self.box_matching_criterion.calculate_2d(
