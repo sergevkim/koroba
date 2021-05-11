@@ -34,7 +34,7 @@ class RunArguments:
     mode: str = '3d'
     one_batch_overfit: int = 1
     optimizer_name: str = 'adam'
-    box_matching_mode: str = 'minmax'
+    projection_mode: str = 'minmax'
 
 
 @dataclass

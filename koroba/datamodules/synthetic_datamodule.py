@@ -3,7 +3,7 @@ import torch
 
 import koroba.utils.io as io
 from koroba.datamodules import BaseDataModule
-from koroba.utils import SyntheticData as SynData
+from koroba.utils import Camera, SyntheticData as SynData
 
 
 class SyntheticDataModule(BaseDataModule):

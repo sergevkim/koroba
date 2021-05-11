@@ -14,12 +14,10 @@ except:
 class BoxMatchingLoss:
     def __init__(
             self,
-            mode: str = 'minmax',
             giou_coef: float = 0.5,
             nll_coef: float = 0.5,
             l1_coef: float = 0.0,
         ):
-        self.mode = mode
         self.giou_coef = giou_coef
         self.nll_coef = nll_coef
         self.l1_coef = l1_coef
@@ -95,7 +93,7 @@ class BoxMatchingLoss:
             self,
             n_boxes: int,
             n_seen_boxes: int,
-            repeated_boxes: Tensor,
+            boxes_projections: Tensor,
             repeated_scores: Tensor,
             seen_boxes_projections: Tensor,
             repeated_seen_labels: Tensor,

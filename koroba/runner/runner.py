@@ -13,7 +13,7 @@ class Runner:
             device: torch.device = torch.device('cpu'),
             max_epoch: int = 200,
             optimizer_name: str = 'adam',
-            box_matching_mode: str = 'minmax',
+            projection_mode: str = 'minmax',
             giou_coef: float = 0.5,
             nll_coef: float = 0.5,
             l1_coef: float = 0.0,
@@ -24,8 +24,8 @@ class Runner:
         self.max_epoch = max_epoch
         self.optimizer_name = optimizer_name
         self.verbose = verbose
+        self.projection_mode = projection_mode
         self.box_matching_criterion = BoxMatchingLoss(
-            mode=box_matching_mode,
             giou_coef=giou_coef,
             nll_coef=nll_coef,
             l1_coef=l1_coef,
@@ -67,12 +67,18 @@ class Runner:
                 rows = []
             else:
                 repeated_boxes = repeated['boxes']
+                boxes_projections = Camera.project_boxes_onto_camera_plane(
+                    boxes=repeated_boxes,
+                    camera=camera,
+                    mode=self.projection_mode,
+                )
+
                 repeated_scores = repeated['scores']
                 repeated_seen_boxes = repeated['seen_boxes']
                 seen_boxes_projections = Camera.project_boxes_onto_camera_plane(
                     boxes=repeated_seen_boxes,
                     camera=camera,
-                    mode=self.mode,
+                    mode=self.projection_mode,
                 )
                 repeated_seen_labels = repeated['seen_labels']
 
@@ -91,7 +97,7 @@ class Runner:
                             self.box_matching_criterion.calculate_2d(
                         n_boxes=len(optimized_boxes),
                         n_seen_boxes=len(seen_boxes),
-                        repeated_boxes=repeated_boxes,
+                        boxes_projections=boxes_projections,
                         repeated_scores=repeated_scores,
                         repeated_seen_boxes=repeated_seen_boxes,
                         repeated_seen_labels=repeated_seen_labels,

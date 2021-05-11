@@ -38,7 +38,7 @@ def main(args):
         device=args.device,
         max_epoch=args.max_epoch,
         optimizer_name=args.optimizer_name,
-        box_matching_mode=args.box_matching_mode,
+        projection_mode=args.projection_mode,
         giou_coef=args.giou_coef,
         nll_coef=args.nll_coef,
         l1_coef=args.l1_coef,
