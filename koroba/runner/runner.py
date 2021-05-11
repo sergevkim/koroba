@@ -61,10 +61,10 @@ class Runner:
             else:
                 if mode == '3d':
                     repeated = BoxMatchingLoss.prepare_repeated_boxes(
+                        optimized_boxes=optimized_boxes,
+                        optimized_scores=optimized_scores,
                         seen_boxes=seen_boxes,
                         seen_labels=seen_labels,
-                        boxes=optimized_boxes,
-                        scores=optimized_scores,
                     )
                     repeated_optimized_boxes = repeated['boxes']
                     repeated_optimized_scores = repeated['scores']

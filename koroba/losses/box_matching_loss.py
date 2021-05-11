@@ -24,29 +24,31 @@ class BoxMatchingLoss:
 
     @staticmethod
     def prepare_repeated_boxes(
+            optimized_boxes,
+            optimized_scores,
             seen_boxes,
             seen_labels,
-            boxes,
-            scores,
         ):
-        n_optimized = len(boxes)
+        n_optimized = len(optimized_boxes)
         n_seen = len(seen_boxes)
 
-        to_concat = [
-            boxes[:, :3],
+        #to_concat = [
+        #    boxes[:, :3],
             #torch.exp(boxes[:, 3:-1]),
-            boxes[:, 3:-1],
-            boxes[:, -1:],
-        ]
-        exp_boxes = torch.cat(to_concat, dim=1)
-        repeated_boxes = exp_boxes.repeat_interleave(n_seen, 0)
-        repeated_scores = scores.repeat_interleave(n_seen, 0)
+        #    boxes[:, 3:-1],
+        #    boxes[:, -1:],
+        #]
+        #exp_boxes = torch.cat(to_concat, dim=1)
+        #repeated_boxes = exp_boxes.repeat_interleave(n_seen, 0)
+        repeated_optimized_boxes = optimized_boxes.repeat_interleave(n_seen, 0)
+        repeated_optimized_scores = \
+            optimized_scores.repeat_interleave(n_seen, 0)
         repeated_seen_boxes = seen_boxes.repeat(n_optimized, 1)
         repeated_seen_labels = seen_labels.repeat(n_optimized)
 
         repeated = {
-            'boxes': repeated_boxes,
-            'scores': repeated_scores,
+            'boxes': repeated_optimized_boxes,
+            'scores': repeated_optimized_scores,
             'seen_boxes': repeated_seen_boxes,
             'seen_labels': repeated_seen_labels,
         }
@@ -64,7 +66,8 @@ class BoxMatchingLoss:
         n_seen = len(seen_projections)
         repeated_optimized_projections = \
             optimized_projections.repeat_interleave(n_seen, 0)
-        repeated_optimized_scores = scores.repeat_interleave(n_seen, 0)
+        repeated_optimized_scores = \
+            optimized_scores.repeat_interleave(n_seen, 0)
         repeated_seen_projections = seen_boxes.repeat(n_optimized, 1)
         repeated_seen_labels = seen_labels.repeat(n_optimized)
 
