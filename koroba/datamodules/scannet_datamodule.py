@@ -22,10 +22,9 @@ class ScanNetDataModule(BaseDataModule):
 
     def handle_one_object_on_frame(
             self,
-            frame_path: Path,
+            frame,
             object_idx: int,
         ):
-        frame = cv2.imread(str(frame_path))
         mask = frame == object_idx
         mask = mask[:, :, 0]
         mask = np.pad(
@@ -64,8 +63,9 @@ class ScanNetDataModule(BaseDataModule):
         labels = list()
 
         for object_idx in range(1, self.n_boxes + 1):
+            frame = cv2.imread(str(frame_path))
             box = self.handle_one_object_on_frame(
-                frame_path=frame_path,
+                frame=frame,
                 object_idx=object_idx,
             )
 
@@ -145,7 +145,7 @@ class ScanNetDataModule(BaseDataModule):
             ),
         )
         initial_boxes = torch.cat(to_concat, axis=1)
-        initial_boxes[:, 3:-1] = torch.log(initial_boxes[:, 3:-1])
+        #initial_boxes[:, 3:-1] = torch.log(initial_boxes[:, 3:-1])
         initial_boxes = \
             torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
         optimized_boxes = initial_boxes.clone().detach()

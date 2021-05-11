@@ -66,8 +66,8 @@ class Runner:
                         seen_boxes=seen_boxes,
                         seen_labels=seen_labels,
                     )
-                    repeated_optimized_boxes = repeated['boxes']
-                    repeated_optimized_scores = repeated['scores']
+                    repeated_optimized_boxes = repeated['optimized_boxes']
+                    repeated_optimized_scores = repeated['optimized_scores']
                     repeated_seen_boxes = repeated['seen_boxes']
                     repeated_seen_labels = repeated['seen_labels']
                     box_matching_loss, rows = \
@@ -96,8 +96,9 @@ class Runner:
                         seen_projections=seen_projections,
                         seen_labels=seen_labels,
                     )
-                    repeated_optimized_projections = repeated['boxes']
-                    repeated_optimized_scores = repeated['scores']
+                    repeated_optimized_projections = \
+                        repeated['optimized_projections']
+                    repeated_optimized_scores = repeated['optimized_scores']
                     repeated_seen_projections = repeated['seen_boxes']
                     repeated_seen_labels = repeated['seen_labels']
                     box_matching_loss, rows = \
@@ -176,7 +177,6 @@ class Runner:
             )
 
         optimized_boxes = optimized_boxes.detach().cpu()
-        #optimized_boxes[:, 3:-1] = np.exp(optimized_boxes[:, 3:-1])
         optimized_scores = \
             torch.softmax(optimized_scores, dim=1).detach().cpu().numpy()
 

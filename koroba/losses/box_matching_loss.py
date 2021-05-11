@@ -47,8 +47,8 @@ class BoxMatchingLoss:
         repeated_seen_labels = seen_labels.repeat(n_optimized)
 
         repeated = {
-            'boxes': repeated_optimized_boxes,
-            'scores': repeated_optimized_scores,
+            'optimized_boxes': repeated_optimized_boxes,
+            'optimized_scores': repeated_optimized_scores,
             'seen_boxes': repeated_seen_boxes,
             'seen_labels': repeated_seen_labels,
         }
@@ -68,7 +68,7 @@ class BoxMatchingLoss:
             optimized_projections.repeat_interleave(n_seen, 0)
         repeated_optimized_scores = \
             optimized_scores.repeat_interleave(n_seen, 0)
-        repeated_seen_projections = seen_boxes.repeat(n_optimized, 1)
+        repeated_seen_projections = seen_projections.repeat(n_optimized, 1)
         repeated_seen_labels = seen_labels.repeat(n_optimized)
 
         repeated = {
