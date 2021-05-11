@@ -99,12 +99,6 @@ class BoxMatchingLoss:
             repeated_seen_labels: Tensor,
             camera: Tensor,
         ):
-        boxes_projections = Camera.project_boxes_onto_camera_plane(
-            boxes=repeated_boxes,
-            camera=camera,
-            mode=self.mode,
-        )
-
         pairwise_giou, _ = calculate_2d_giou(
             box1=boxes_projections[None, ...],
             box2=seen_boxes_projections[None, ...],

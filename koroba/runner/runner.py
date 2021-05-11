@@ -89,7 +89,7 @@ class Runner:
                         n_seen_boxes=len(seen_boxes),
                         repeated_boxes=repeated_boxes,
                         repeated_scores=repeated_scores,
-                        seen_boxes_projections=seen_boxes_projections,
+                        repeated_seen_boxes=repeated_seen_boxes,
                         repeated_seen_labels=repeated_seen_labels,
                     )
                 else:
@@ -99,7 +99,7 @@ class Runner:
                         n_seen_boxes=len(seen_boxes),
                         boxes_projections=boxes_projections,
                         repeated_scores=repeated_scores,
-                        repeated_seen_boxes=repeated_seen_boxes,
+                        seen_boxes_projections=seen_boxes_projections,
                         repeated_seen_labels=repeated_seen_labels,
                         camera=camera,
                     )
