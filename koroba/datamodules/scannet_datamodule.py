@@ -14,11 +14,13 @@ from koroba.utils import Box
 class ScanNetDataModule(BaseDataModule):
     def __init__(
             self,
-            scan_path: Path('./data/scans/scene0000_00'),
+            batch_size: int = 1,
             device: torch.device = torch.device('cpu'),
+            scan_path: Path('./data/scans/scene0000_00'),
         ):
-        self.scan_path = scan_path
+        self.batch_size = batch_size
         self.device = device
+        self.scan_path = scan_path
 
     def handle_one_object_on_frame(
             self,
