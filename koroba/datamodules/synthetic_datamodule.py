@@ -132,7 +132,7 @@ class SyntheticDataModule(BaseDataModule):
             ),
         )
         initial_boxes = torch.cat(to_concat, axis=1)
-        initial_boxes[:, 3:-1] = torch.log(initial_boxes[:, 3:-1])
+        #initial_boxes[:, 3:-1] = torch.log(initial_boxes[:, 3:-1])
         initial_boxes = \
             torch.tensor(initial_boxes, dtype=torch.float, device=self.device)
         optimized_boxes = initial_boxes.clone().detach()

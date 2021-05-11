@@ -153,29 +153,3 @@ class SyntheticData:
 
         return true, seen
 
-    @staticmethod
-    def update_box_dataset_with_cameras(
-            seen,
-            proj: bool = False,
-        ):
-        for i in range(len(seen['boxes'])):
-            if not len(seen['boxes'][i]):
-                continue
-            mask = Camera.check_boxes_in_camera_fov(
-                boxes=seen['boxes'][i],
-                camera=seen['cameras'][i],
-            )
-            for key in ['boxes', 'labels', 'scores']:
-                seen[key][i] = seen[key][i][mask]
-
-        if proj:
-            seen['projections'] = list()
-
-            for i, camera in enumerate(seen['cameras']):
-                boxes_set = seen['boxes'][i]
-                proj = Camera.project_boxes_onto_camera_plane(
-                    camera=camera,
-                    boxes_set=boxes_set,
-                )
-                seen['projections'].append(proj)
-

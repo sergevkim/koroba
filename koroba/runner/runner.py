@@ -60,10 +60,10 @@ class Runner:
                 rows = []
             else:
                 if mode == '3d':
-                    repeated = BoxMatchingLoss.prepare_repeated(
+                    repeated = BoxMatchingLoss.prepare_repeated_boxes(
                         seen_boxes=seen_boxes,
                         seen_labels=seen_labels,
-                        optimized_boxes=optimized_boxes,
+                        boxes=optimized_boxes,
                         scores=optimized_scores,
                     )
                     repeated_optimized_boxes = repeated['boxes']
@@ -80,21 +80,21 @@ class Runner:
                         repeated_seen_labels=repeated_seen_labels,
                     )
                 else:
-                    optimized_projections = Camera.project_boxes_onto_camera_plane(
-                        boxes=optimized_boxes,
-                        camera=camera,
-                        mode=self.projection_mode,
-                    )
                     seen_projections = Camera.project_boxes_onto_camera_plane(
                         boxes=seen_boxes,
                         camera=camera,
                         mode=self.projection_mode,
                     )
-                    repeated = BoxMatchingLoss.prepare_repeated(
-                        seen_boxes=seen_projections,
+                    optimized_projections = Camera.project_boxes_onto_camera_plane(
+                        boxes=optimized_boxes,
+                        camera=camera,
+                        mode=self.projection_mode,
+                    )
+                    repeated = BoxMatchingLoss.prepare_repeated_projections(
+                        optimized_projections=optimized_projections,
+                        optimized_scores=optimized_scores,
+                        seen_projections=seen_projections,
                         seen_labels=seen_labels,
-                        boxes=optimized_projections,
-                        scores=optimized_scores,
                     )
                     repeated_optimized_projections = repeated['boxes']
                     repeated_optimized_scores = repeated['scores']
@@ -176,7 +176,7 @@ class Runner:
             )
 
         optimized_boxes = optimized_boxes.detach().cpu()
-        optimized_boxes[:, 3:-1] = np.exp(optimized_boxes[:, 3:-1])
+        #optimized_boxes[:, 3:-1] = np.exp(optimized_boxes[:, 3:-1])
         optimized_scores = \
             torch.softmax(optimized_scores, dim=1).detach().cpu().numpy()
 

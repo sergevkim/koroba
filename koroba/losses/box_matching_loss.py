@@ -23,28 +23,26 @@ class BoxMatchingLoss:
         self.l1_coef = l1_coef
 
     @staticmethod
-    def prepare_repeated(
+    def prepare_repeated_boxes(
             seen_boxes,
             seen_labels,
             boxes,
             scores,
         ):
-        n_boxes = len(boxes)
-        n_seen_boxes = len(seen_boxes)
-
-        if not n_seen_boxes:
-            return None
+        n_optimized = len(boxes)
+        n_seen = len(seen_boxes)
 
         to_concat = [
             boxes[:, :3],
-            torch.exp(boxes[:, 3: -1]),
+            #torch.exp(boxes[:, 3:-1]),
+            boxes[:, 3:-1],
             boxes[:, -1:],
         ]
         exp_boxes = torch.cat(to_concat, dim=1)
-        repeated_boxes = exp_boxes.repeat_interleave(n_seen_boxes, 0)
-        repeated_scores = scores.repeat_interleave(n_seen_boxes, 0)
-        repeated_seen_boxes = seen_boxes.repeat(n_boxes, 1)
-        repeated_seen_labels = seen_labels.repeat(n_boxes)
+        repeated_boxes = exp_boxes.repeat_interleave(n_seen, 0)
+        repeated_scores = scores.repeat_interleave(n_seen, 0)
+        repeated_seen_boxes = seen_boxes.repeat(n_optimized, 1)
+        repeated_seen_labels = seen_labels.repeat(n_optimized)
 
         repeated = {
             'boxes': repeated_boxes,
@@ -54,6 +52,28 @@ class BoxMatchingLoss:
         }
 
         return repeated
+
+    @staticmethod
+    def prepare_repeated_projections(
+            optimized_projections,
+            optimized_scores,
+            seen_projections,
+            seen_labels,
+        ):
+        n_optimized = len(optimized_projections)
+        n_seen = len(seen_projections)
+        repeated_optimized_projections = \
+            optimized_projections.repeat_interleave(n_seen, 0)
+        repeated_optimized_scores = scores.repeat_interleave(n_seen, 0)
+        repeated_seen_projections = seen_boxes.repeat(n_optimized, 1)
+        repeated_seen_labels = seen_labels.repeat(n_optimized)
+
+        repeated = {
+            'optimized_projections': repeated_optimized_projections,
+            'optimized_scores': repeated_optimized_scores,
+            'seen_projections': repeated_seen_projections,
+            'seen_labels': repeated_seen_labels,
+        }
 
     def calculate_3d(
             self,
