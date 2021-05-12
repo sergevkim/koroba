@@ -1,11 +1,11 @@
 from argparse import ArgumentParser
 
 import koroba.utils.io as io
-from koroba.datamodules import SyntheticDataModule
+from koroba.datamodules import ScanNetDataModule
 from koroba.runner import Runner
 from koroba.utils import Randomizer
 
-from configs.synthetic_experiment_config import (
+from configs.scannet_experiment_config import (
     CommonArguments,
     DataArguments,
     RunArguments,
@@ -16,23 +16,12 @@ from configs.synthetic_experiment_config import (
 def main(args):
     Randomizer.set_seed(seed=args.seed)
 
-    datamodule = SyntheticDataModule(
+    datamodule = ScanNetDataModule(
         batch_size=args.batch_size,
+        scan_path=args.scan_path,
         device=args.device,
-        n_boxes=args.n_boxes,
-        n_cameras=args.n_cameras,
-        n_classes=args.n_classes,
     )
-    datamodule.setup(
-        center_std=args.center_std,
-        size_mean=args.size_mean,
-        size_std=args.size_std,
-        class_probability=args.class_probability,
-        drop_probability=args.drop_probability,
-        center_threshold=args.center_threshold,
-        size_threshold=args.size_threshold,
-        angle_threshold=args.angle_threshold,
-    )
+    datamodule.setup(n_frames=args.n_frames)
 
     runner = Runner(
         device=args.device,

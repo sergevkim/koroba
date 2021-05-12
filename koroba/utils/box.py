@@ -19,7 +19,7 @@ class Box:
     on the all point cloud.
     '''
     @staticmethod
-    def seven2eight(box: Tensor):
+    def box3d_to_vertices3d(box: Tensor):
         # TODO vectorize
         center = box[:3]
         sizes = box[3:6]
@@ -45,7 +45,7 @@ class Box:
         return torch.stack(vertices, dim=0)
 
     @staticmethod
-    def eight2seven(vertices: Tensor):
+    def vertices3d_to_box3d(vertices: Tensor):
         center = vertices.sum(axis=0)
         # right upper left lower in xy plane
         right_index, far_index, high_index = vertices.argmax(axis=0)
@@ -60,13 +60,22 @@ class Box:
         far_right_y_delta = np.abs(y_right - y_far)
         far_left_x_delta = np.abs(x_left - x_far)
         far_left_y_delta = np.abs(y_left - y_far)
-        angle = np.arctan(far_right_x_delta / far_right_y_delta)
+        angle = np.arctan(far_right_x_delta / far_right_y_delta) #TODO atan2
         y_size = np.sqrt(far_right_x_delta ** 2 + far_right_y_delta ** 2)
         x_size = np.sqrt(far_left_x_delta ** 2 + far_left_y_delta ** 2)
         z_size = z_high - z_low
 
         extent = torch.tensor([x_size, y_size, z_size])
         angle = torch.tensor([angle])
+        box = torch.cat((center, extent, angle), dim=0)
+
+        return box
+
+    @staticmethod
+    def vertices2d_to_box2d(vertices: Tensor):
+        angle = torch.tensor([0], device=vertices.device)
+        center = vertices.mean(axis=0)
+        extent = torch.abs(vertices[1] - vertices[0]) / 2
         box = torch.cat((center, extent, angle), dim=0)
 
         return box
@@ -93,6 +102,6 @@ class Box:
 
 if __name__ == '__main__':
     box = np.array([0, 0, 0, 1, 2, 3, np.pi / 6])
-    eight = Box.seven2eight(box)
+    eight = Box.box3d_to_vertices3d(box)
     print(f'eight:\n{eight}\n')
     print(eight.shape)

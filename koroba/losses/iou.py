@@ -433,8 +433,18 @@ def calculate_2d_giou(
         box2: torch.Tensor,
         enclosing_type: str = 'smallest',
     ):
+    """calculated 2d GIoU loss.
+    Args:
+        box3d1 (torch.Tensor): (B, N, 2+2+1),  (x,y,w,h,alpha)
+        box3d2 (torch.Tensor): (B, N, 2+2+1),  (x,y,w,h,alpha)
+        enclosing_type (str, optional): type of enclosing box. Defaults to "smallest".
+    Returns:
+        (torch.Tensor): (B, N) 2d GIoU loss
+        (torch.Tensor): (B, N) 2d IoU
+    """
     iou, corners1, corners2, u = calculate_iou(box1, box2)
     w, h = enclosing_box(corners1, corners2, enclosing_type)
     area_c = w * h
-    giou_loss = 1.0 - iou + ( area_c - u )/area_c
+    giou_loss = 1.0 - iou + (area_c - u)/(area_c + u)
+
     return giou_loss, iou

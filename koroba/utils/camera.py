@@ -37,11 +37,11 @@ class Camera:
             camera: Tensor,
         ) -> Tensor:
         assert box.shape == (7, )
-        vertices = Box.seven2eight(box)
+        vertices = Box.box3d_to_vertices3d(box)
         assert vertices.shape == (8, 3)
         to_concat = (
             vertices.T,
-            torch.ones(size=(1, len(vertices))),
+            torch.ones(size=(1, len(vertices)), device=box.device),
         )
         vertices = torch.cat(to_concat, axis=0)
         x, y, z = camera @ vertices
@@ -75,9 +75,10 @@ class Camera:
                 x_max = x @ F.softmax(x, dim=0)
                 y_max = y @ F.softmax(y, dim=0)
 
-            point_min = np.array((x_min, y_min))
-            point_max = np.array((x_max, y_max))
-            box_projection = np.array((point_min, point_max))
-            boxes_projections.append(box_projection)
+            point_min = torch.stack((x_min, y_min), dim=0)
+            point_max = torch.stack((x_max, y_max), dim=0)
+            vertices2d = torch.stack((point_min, point_max), dim=0)
+            box2d = Box.vertices2d_to_box2d(vertices2d)
+            boxes_projections.append(box2d)
 
-        return torch.tensor(boxes_projections)
+        return torch.stack(boxes_projections, dim=0)

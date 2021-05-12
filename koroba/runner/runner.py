@@ -13,16 +13,18 @@ class Runner:
             device: torch.device = torch.device('cpu'),
             max_epoch: int = 200,
             optimizer_name: str = 'adam',
-            verbose: bool = False,
+            projection_mode: str = 'minmax',
             giou_coef: float = 0.5,
             nll_coef: float = 0.5,
             l1_coef: float = 0.0,
             no_object_coef: float = 0.4,
+            verbose: bool = False,
         ):
         self.device = device
         self.max_epoch = max_epoch
         self.optimizer_name = optimizer_name
         self.verbose = verbose
+        self.projection_mode = projection_mode
         self.box_matching_criterion = BoxMatchingLoss(
             giou_coef=giou_coef,
             nll_coef=nll_coef,
@@ -42,45 +44,63 @@ class Runner:
         ):
         i_loss = torch.tensor(.0, dtype=torch.float, device=self.device)
 
-        for j, seen_boxes in enumerate(seen['boxes']):
+        for j in range(len(seen['labels'])):
             optimizer.zero_grad()
 
-            #seen_boxes = seen['boxes'][j]
             seen_labels = seen['labels'][j]
             camera = seen['cameras'][j]
 
-            repeated = BoxMatchingLoss.prepare_repeated(
-                seen_boxes=seen_boxes,
-                seen_labels=seen_labels,
-                boxes=optimized_boxes,
-                scores=optimized_scores,
-            )
-            repeated_boxes = repeated['boxes']
-            repeated_scores = repeated['scores']
-            repeated_seen_boxes = repeated['seen_boxes']
-            repeated_seen_labels = repeated['seen_labels']
-
-            if mode == '3d':
-                box_matching_loss, rows = \
-                        self.box_matching_criterion.calculate_3d(
-                    n_boxes=len(optimized_boxes),
-                    n_seen_boxes=len(seen_boxes),
-                    repeated_boxes=repeated_boxes,
-                    repeated_scores=repeated_scores,
-                    repeated_seen_boxes=repeated_seen_boxes,
-                    repeated_seen_labels=repeated_seen_labels,
+            if len(seen_labels) == 0:
+                box_matching_loss = torch.tensor(
+                    0.0,
+                    dtype=torch.float,
+                    device=optimized_boxes.device,
                 )
+                rows = []
             else:
-                box_matching_loss, rows = \
-                        self.box_matching_criterion.calculate_2d(
-                    n_boxes=len(optimized_boxes),
-                    n_seen_boxes=len(seen_boxes),
-                    repeated_boxes=repeated_boxes,
-                    repeated_scores=repeated_scores,
-                    repeated_seen_boxes=repeated_seen_boxes,
-                    repeated_seen_labels=repeated_seen_labels,
-                    camera=camera,
-                )
+                if mode == '3d':
+                    seen_boxes = seen['boxes'][j]
+                    assert len(seen_boxes) != 0
+                    repeated = BoxMatchingLoss.prepare_repeated_boxes(
+                        optimized_boxes=optimized_boxes,
+                        optimized_scores=optimized_scores,
+                        seen_boxes=seen_boxes,
+                        seen_labels=seen_labels,
+                    )
+                    box_matching_loss, rows = \
+                            self.box_matching_criterion.calculate_3d(
+                        n_boxes=len(optimized_boxes),
+                        n_seen_boxes=len(seen_boxes),
+                        repeated_optimized_boxes=repeated['optimized_boxes'],
+                        repeated_optimized_scores=repeated['optimized_scores'],
+                        repeated_seen_boxes=repeated['seen_boxes'],
+                        repeated_seen_labels=repeated['seen_labels'],
+                    )
+                elif mode == '2d':
+                    seen_projections_set = seen['projections_sets'][j]
+                    assert len(seen_projections_set) != 0
+                    seen_projections = seen_projections_set
+                    optimized_projections = Camera.project_boxes_onto_camera_plane(
+                        boxes=optimized_boxes,
+                        camera=camera,
+                        mode=self.projection_mode,
+                    )
+                    repeated = BoxMatchingLoss.prepare_repeated_projections(
+                        optimized_projections=optimized_projections,
+                        optimized_scores=optimized_scores,
+                        seen_projections=seen_projections,
+                        seen_labels=seen_labels,
+                    )
+                    box_matching_loss, rows = \
+                            self.box_matching_criterion.calculate_2d(
+                        n_projections=len(optimized_projections),
+                        n_seen_projections=len(seen_projections),
+                        repeated_optimized_projections=repeated['optimized_projections'],
+                        repeated_optimized_scores=repeated['optimized_scores'],
+                        repeated_seen_projections=repeated['seen_projections'],
+                        repeated_seen_labels=repeated['seen_labels'],
+                        camera=camera,
+                    )
 
             visible_index = Camera.check_boxes_in_camera_fov(
                 boxes=optimized_boxes.detach(), #TODO remove detach
@@ -112,7 +132,7 @@ class Runner:
             loss = loss / max(n_matched + n_no_object, 1)
             i_loss += loss
 
-        i_loss = i_loss / len(seen['boxes'])
+        i_loss = i_loss / len(seen['labels'])
         i_loss.backward()
         optimizer.step()
         print(f'epoch_idx: {epoch_idx};  loss: {i_loss.detach().cpu().numpy()}')
@@ -147,7 +167,6 @@ class Runner:
             )
 
         optimized_boxes = optimized_boxes.detach().cpu()
-        optimized_boxes[:, 3:-1] = np.exp(optimized_boxes[:, 3:-1])
         optimized_scores = \
             torch.softmax(optimized_scores, dim=1).detach().cpu().numpy()
 

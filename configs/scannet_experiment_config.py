@@ -16,32 +16,22 @@ class CommonArguments:
 
 @dataclass
 class DataArguments:
-    angle_threshold: float = 0.3
     batch_size: int = 1
-    center_std: float = 0.2
-    center_threshold: float = 0.02
-    class_probability: float = 0.1
-    drop_probability: float = 0.2
-    size_mean: float = 0.05
-    size_std: float = 0.02
-    size_threshold: float = 0.1
+    scan_path: Path = Path('./data/scans/scene0000_00')
+    n_frames: int = 20
 
 
 @dataclass
 class RunArguments:
     learning_rate: float = 0.01
     max_epoch: int = 200
-    mode: str = '3d'
-    one_batch_overfit: int = 1
+    mode: str = '2d'
     optimizer_name: str = 'adam'
     projection_mode: str = 'minmax'
 
 
 @dataclass
 class SpecificArguments:
-    n_boxes: int = 8
-    n_cameras: int = 20
-    n_classes: int = 10
     giou_coef: float = 0.5
     nll_coef: float = 0.5
     l1_coef: float = 0.0
