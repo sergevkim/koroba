@@ -1,8 +1,11 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 
 from koroba.datamodules import BaseDataModule
+from koroba.loggers import BaseLogger
 from koroba.losses import BoxMatchingLoss
 from koroba.utils import Camera
 
@@ -19,6 +22,7 @@ class Runner:
             l1_coef: float = 0.0,
             no_object_coef: float = 0.4,
             verbose: bool = False,
+            logger: Optional[BaseLogger] = None,
         ):
         self.device = device
         self.max_epoch = max_epoch
@@ -31,6 +35,7 @@ class Runner:
             l1_coef=l1_coef,
         )
         self.no_object_coef = no_object_coef
+        self.logger = logger
 
     def run_epoch(
             self,

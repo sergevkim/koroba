@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 
 import koroba.utils.io as io
 from koroba.datamodules import ScanNetDataModule
+from koroba.loggers import WandbLogger
 from koroba.runner import Runner
 from koroba.utils import Randomizer
 
@@ -22,6 +23,8 @@ def main(args):
         device=args.device,
     )
     datamodule.setup(n_frames=args.n_frames)
+
+    logger = WandbLogger(project=args.project)
 
     runner = Runner(
         device=args.device,
