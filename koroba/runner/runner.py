@@ -132,7 +132,7 @@ class Runner:
             loss = loss / max(n_matched + n_no_object, 1)
             i_loss += loss
 
-        i_loss /= i_loss / len(seen['labels'])
+        i_loss = i_loss / len(seen['labels'])
         i_loss.backward()
         optimizer.step()
         print(f'epoch_idx: {epoch_idx};  loss: {i_loss.detach().cpu().numpy()}')

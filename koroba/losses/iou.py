@@ -445,5 +445,6 @@ def calculate_2d_giou(
     iou, corners1, corners2, u = calculate_iou(box1, box2)
     w, h = enclosing_box(corners1, corners2, enclosing_type)
     area_c = w * h
-    giou_loss = 1.0 - iou + ( area_c - u )/area_c
+    giou_loss = 1.0 - iou + (area_c - u)/(area_c + u)
+
     return giou_loss, iou
