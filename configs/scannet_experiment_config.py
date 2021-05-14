@@ -9,6 +9,7 @@ class CommonArguments:
     device: torch.device = torch.device(
         'cuda:0' if torch.cuda.is_available() else 'cpu'
     )
+    project: str = 'koroba'
     seed: int = 9
     verbose: int = 1
     version: str = 'koroba0.1'
