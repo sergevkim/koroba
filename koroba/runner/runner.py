@@ -135,9 +135,14 @@ class Runner:
                 torch.sum(no_object_nll) * self.no_object_coef
             )
             loss = loss / max(n_matched + n_no_object, 1)
+
             i_loss += loss
 
         i_loss = i_loss / len(seen['labels'])
+        if self.logger is not None:
+            metrics = {'loss': i_loss.item()}
+            self.logger.log_metrics(metrics)
+
         i_loss.backward()
         optimizer.step()
         print(f'epoch_idx: {epoch_idx};  loss: {i_loss.detach().cpu().numpy()}')
